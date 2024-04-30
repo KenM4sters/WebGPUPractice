@@ -3,7 +3,8 @@ import App from "./App";
 
 function Main() : void
 {
-    const AApp = new App();
+    const AApplication = new App();
+    AApplication.Draw();
 }
 
 Main();

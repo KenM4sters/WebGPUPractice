@@ -17,7 +17,7 @@ export interface IAppPayload
 
 export interface IRenderLayer 
 {
-    Draw() : void;
+    Draw(ts : number) : void;
     Resize() : void;
     Respond() : void;
 };

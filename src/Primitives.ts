@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferLayout } from "./Buffer";
 import { EDataType, IPrimitivePayload } from "./Types";
 
-export abstract class Primitve 
+export abstract class Primitive 
 {   
     constructor(payload : IPrimitivePayload) 
     {
@@ -17,7 +17,7 @@ export abstract class Primitve
 }
 
 
-export class Square extends Primitve 
+export class Square extends Primitive 
 {
     constructor() 
     {
