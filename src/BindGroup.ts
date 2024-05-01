@@ -1,11 +1,11 @@
 export default class BindGroup 
 {
-    constructor() 
+    constructor(bufferDescriptors : GPUBufferDescriptor[]) 
     {
-
+        
     }
 
-    private readonly mLayout : GPUBindGroupLayout;
-    private readonly mBindGroup : GPUBindGroup;
-    private readonly mUniformBuffers : 
-}
+    public readonly mLayout : GPUBindGroupLayout;
+    public readonly mBindGroup : GPUBindGroup;
+    public readonly mUniformBuffers : GPUBuffer[];
+};

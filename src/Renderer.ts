@@ -3,8 +3,8 @@ import { Primitive, Square } from "./Primitives";
 import squareShaderSrc from "../Shaders/Square.wgsl?raw";
 import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
 import Input from "./Input";
-import RenderSystem from "./RenderSystem";
 import Device from "./Device";
+import { RenderSystem } from "./RenderSystem";
 
 export default class Renderer {
   constructor(d : Device) {

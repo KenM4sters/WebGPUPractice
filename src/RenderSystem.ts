@@ -1,5 +1,5 @@
+import { Mesh } from "./Mesh";
 import PipeLine from "./Pipeline";
-import { Primitive } from "./Primitives";
 
 export abstract class RenderSystem 
 {
@@ -10,16 +10,15 @@ export abstract class RenderSystem
 
 
 //----------------------------------------------------------------
-// The PrimitiveSystem is a RenderSystem that handles the rendering
-// of any scene objects that are basic Primitives - think squares,
+// The MeshSystem is a RenderSystem that handles the rendering
+// of any scene objects that are Meshes - think squares,
 // triangles, circles etc.. 
 //----------------------------------------------------------------
-export class PrimitiveSystem extends RenderSystem 
+export class MeshSystem extends RenderSystem 
 {
-    constructor(primitives : Primitive[]) 
+    constructor(m : Mesh[]) 
     {
         super();
 
-        
     }
-}
+};

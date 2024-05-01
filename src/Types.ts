@@ -9,12 +9,6 @@ export interface Ref<T>
     val : T;
 };
 
-export interface IAppPayload 
-{
-    Canvas : HTMLCanvasElement;
-    Device : GPUDevice
-};
-
 export interface IRenderLayer 
 {
     Draw(ts : number) : void;
@@ -27,6 +21,7 @@ export interface IPrimitivePayload
     Vertices : Float32Array;
     BufferLayout : BufferLayout;
 };
+
 
 //---------------------------------------------------
 // Native Interfaces
