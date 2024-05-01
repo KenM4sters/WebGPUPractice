@@ -1,10 +1,11 @@
-import App from "./App";
+import Program from "./Program";
 
 
-function Main() : void
+async function Main() : Promise<void>
 {
-    const AApplication = new App();
-    AApplication.Draw();
+    const program = new Program();
+    await program.QueryForDevice();
+    program.Draw();
 }
 
 Main();

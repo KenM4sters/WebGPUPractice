@@ -12,17 +12,17 @@ const keys : {[key: string] : boolean } =
     "q": false,
     "e": false,
     "space": false,
-    "arrow_left": false,
-    "arrow_right": false,
-    "arrow_up": false,
-    "arrow_down": false,
+    "ArrowLeft": false,
+    "ArrowRight": false,
+    "ArrowUp": false,
+    "ArrowDown": false,
 };
 
 export default class Input 
 {
     constructor() {}
 
-    public ListenToEvents() : void 
+    public static ListenToEvents() : void 
     {
         window.addEventListener("keydown", (event : KeyboardEvent) => 
         {

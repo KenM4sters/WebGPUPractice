@@ -39,6 +39,19 @@ export default class PerspectiveCamera
         glm.mat4.perspective(this.projectionMatrix, glm.glMatrix.toRadian(this.fov), w/h, 0.1, 1000);
     }
 
+    // Modifies the camera position and updates the view matrix - Apologies in advance for the absolutely disgusting syntax (blame TS).
+    public ProcessUserInput(dir : CameraDirections, dt : number) : void 
+    {
+        // Nothing ontoward is actually going on here - it's just a lot of namespaces and strange functions that output new variables instead of changing
+        // the inputs. We set the position to add the direction vector but scaled down by the delta time (*movementSpeed because it's a little too slow). That's it.
+        if(dir == CameraDirections.LEFT)     this.position = glm.vec3.add(glm.vec3.create(), this.position, glm.vec3.negate(glm.vec3.create(), glm.vec3.scale(glm.vec3.create(), {...this.right}, dt*this.movementSpeed)));
+        if(dir == CameraDirections.RIGHT)    this.position = glm.vec3.add(glm.vec3.create(), this.position, glm.vec3.scale(glm.vec3.create(), {...this.right}, dt*this.movementSpeed));
+        if(dir == CameraDirections.UP)       this.position = glm.vec3.add(glm.vec3.create(), this.position, glm.vec3.scale(glm.vec3.create(), {...this.up}, dt*this.movementSpeed));
+        if(dir == CameraDirections.DOWN)     this.position = glm.vec3.add(glm.vec3.create(), this.position, glm.vec3.negate(glm.vec3.create(), glm.vec3.scale(glm.vec3.create(), {...this.up}, dt*this.movementSpeed)));
+
+        this.UpdateViewMatrix(); // This must be called if you want objects to properly be updated in the viewport.                
+    }   
+
     // Getters.
     public GetProjectionMatrix() : glm.mat4 { return this.projectionMatrix; }
     public GetViewMatrix() : glm.mat4 { return this.viewMatrix; }

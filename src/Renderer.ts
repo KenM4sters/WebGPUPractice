@@ -1,25 +1,30 @@
 import * as glm from "gl-matrix"
 import { Primitive, Square } from "./Primitives";
-import { IAppPayload, IRenderLayer } from "./Types";
 import squareShaderSrc from "../Shaders/Square.wgsl?raw";
-import PerspectiveCamera from "./PerspectiveCamera";
+import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
 import Input from "./Input";
+import RenderSystem from "./RenderSystem";
+import Device from "./Device";
 
-export default class Renderer implements IRenderLayer {
-  constructor(payload: IAppPayload) {
+export default class Renderer {
+  constructor(d : Device) {
 
-    this.mPayload = payload;
+    this.mDevice = d;
+    
+    // Canvas
+    const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
     // Camera
-    this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, -3.0), payload.Canvas.width, payload.Canvas.height);
-    // Encoder Setup
-    const context = payload.Canvas.getContext("webgpu");
+    this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 3.0), canvas.width, canvas.height);
+
+    // Get the context so that we can query for its color texture and pass our scene texture.
+    const context = canvas.getContext("webgpu");
     if (!context) throw new Error("Failed to get WebGPU context from canvas!");
     this.mContext = context;
 
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     this.mContext.configure({
-      device: payload.Device,
+      device: this.mDevice.mGPU,
       format: canvasFormat,
     });
 
@@ -28,13 +33,13 @@ export default class Renderer implements IRenderLayer {
 
     const depthTextureDesc : GPUTextureDescriptor = 
     {
-      size: [this.mPayload.Canvas.width, this.mPayload.Canvas.height],
+      size: [canvas.width, canvas.height],
       dimension: "2d",
       format: "depth24plus-stencil8",
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
     };
 
-    depthTexture = this.mPayload.Device.createTexture(depthTextureDesc);
+    depthTexture = this.mDevice.mGPU.createTexture(depthTextureDesc);
     depthTextureView = depthTexture.createView();
 
     let colorTexture = this.mContext.getCurrentTexture();
@@ -44,24 +49,24 @@ export default class Renderer implements IRenderLayer {
 
     const square = new Square();
 
-    const vertexBuffer = payload.Device.createBuffer({
+    const vertexBuffer = this.mDevice.mGPU.createBuffer({
       label: "Square Vertices",
       size: square.GetPayload().Vertices.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
     
-    payload.Device.queue.writeBuffer(
+    this.mDevice.mGPU.queue.writeBuffer(
       vertexBuffer,
       0,
       square.GetPayload().Vertices
     );
 
-    const squareShaderModule = payload.Device.createShaderModule({
+    const squareShaderModule = this.mDevice.mGPU.createShaderModule({
       label: "Square Shader",
       code: squareShaderSrc,
     });
 
-    const squarePipeline = payload.Device.createRenderPipeline({
+    const squarePipeline = this.mDevice.mGPU.createRenderPipeline({
       label: "Square Pipeline",
       layout: "auto",
       vertex: {
@@ -85,19 +90,40 @@ export default class Renderer implements IRenderLayer {
     // Uniforms.
     this.mMatrix = glm.mat4.scale(this.mMatrix, this.mMatrix, glm.vec3.fromValues(0.1, 0.1, 1.0));
 
-    let modelUBO = payload.Device.createBuffer({
+    let modelUBO = this.mDevice.mGPU.createBuffer({
       label: "SquareMatrix",
       size: 16*4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
-    payload.Device.queue.writeBuffer(modelUBO, 0, new Float32Array(this.mMatrix));
+
+    let viewUBO = this.mDevice.mGPU.createBuffer({
+      label: "SquareView",
+      size: 16*4,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    let projectionUBO = this.mDevice.mGPU.createBuffer({
+      label: "SquareProjection",
+      size: 16*4,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    this.mDevice.mGPU.queue.writeBuffer(modelUBO, 0, new Float32Array(this.mMatrix));
+    this.mDevice.mGPU.queue.writeBuffer(viewUBO, 0, new Float32Array(this.mCamera.GetViewMatrix()));
+    this.mDevice.mGPU.queue.writeBuffer(projectionUBO, 0, new Float32Array(this.mCamera.GetProjectionMatrix()));  
     
-    const squareBindGroup = payload.Device.createBindGroup({
+    const squareBindGroup = this.mDevice.mGPU.createBindGroup({
       label: "SquareBindGroup",
       layout: squarePipeline.getBindGroupLayout(0),
       entries: [{
-        binding: 0,
-        resource: {buffer: modelUBO}
+          binding: 0,
+          resource: {buffer: modelUBO}
+      }, {
+          binding: 1,
+          resource: {buffer: viewUBO}
+      }, {
+          binding: 2,
+          resource: {buffer: projectionUBO}
       }]
     });
 
@@ -107,14 +133,14 @@ export default class Renderer implements IRenderLayer {
       Geometry: square,
       VertexBuffer: vertexBuffer,
       BindGroup: squareBindGroup,
-      UBO: modelUBO,
+      UBO: {Model: modelUBO, View: viewUBO, Projection: projectionUBO},
       Depth: {Texture: depthTexture, TextureView: depthTextureView},
       Color: {Texture: colorTexture, TextureView: colorTextureView},
     };
     
   }
 
-  public Draw(ts: number): void {
+  public Draw(systems : RenderSystem[], ts: number): void {
     // Set up the color attachment
     this.mRenderPackage.Color.Texture = this.mContext.getCurrentTexture();
     this.mRenderPackage.Color.TextureView = this.mRenderPackage.Color.Texture.createView();
@@ -128,10 +154,15 @@ export default class Renderer implements IRenderLayer {
 
   public HandleUserInput(ts : number) : void 
   {
-    Input.IsKeyPressed("w") ? glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(0.0*ts*5.0, 1.0*ts*5.0, 0.0)) : null;
-    Input.IsKeyPressed("a") ? glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(-1.0*ts*5.0, 0.0*ts*5.0, 0.0)) : null;
-    Input.IsKeyPressed("s") ? glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(0.0*ts*5.0, -1.0*ts*5.0, 0.0)) : null;
-    Input.IsKeyPressed("d") ? glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(1.0*ts*5.0, 0.0*ts*5.0, 0.0)) : null;
+    if(Input.IsKeyPressed("w")) glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(0.0*ts*5.0, 1.0*ts*5.0, 0.0));  
+    if(Input.IsKeyPressed("a")) glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(-1.0*ts*5.0, 0.0*ts*5.0, 0.0));  
+    if(Input.IsKeyPressed("s")) glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(0.0*ts*5.0, -1.0*ts*5.0, 0.0));  
+    if(Input.IsKeyPressed("d")) glm.mat4.translate(this.mMatrix, this.mMatrix, glm.vec3.fromValues(1.0*ts*5.0, 0.0*ts*5.0, 0.0));
+
+    if(Input.IsKeyPressed("ArrowUp")) this.mCamera.ProcessUserInput(CameraDirections.UP, ts);
+    if(Input.IsKeyPressed("ArrowLeft")) this.mCamera.ProcessUserInput(CameraDirections.LEFT, ts);
+    if(Input.IsKeyPressed("ArrowDown")) this.mCamera.ProcessUserInput(CameraDirections.DOWN, ts);
+    if(Input.IsKeyPressed("ArrowRight")) this.mCamera.ProcessUserInput(CameraDirections.RIGHT, ts); 
   }
 
   public Resize(): void {}
@@ -141,7 +172,7 @@ export default class Renderer implements IRenderLayer {
   private EncodeCommands() : void 
   {
     // Begin render pass
-    const encoder = this.mPayload.Device.createCommandEncoder();
+    const encoder = this.mDevice.mGPU.createCommandEncoder();
     const pass = encoder.beginRenderPass({
         colorAttachments: [
             {
@@ -157,20 +188,27 @@ export default class Renderer implements IRenderLayer {
     pass.setPipeline(this.mRenderPackage.Pipeline);
     pass.setVertexBuffer(0, this.mRenderPackage.VertexBuffer);
     pass.setBindGroup(0, this.mRenderPackage.BindGroup);
-    this.mPayload.Device.queue.writeBuffer(this.mRenderPackage.UBO, 0, new Float32Array(this.mMatrix));
+    this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Model, 0, new Float32Array(this.mMatrix));
+    this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.View, 0, new Float32Array(this.mCamera.GetViewMatrix()));
+    this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Projection, 0, new Float32Array(this.mCamera.GetProjectionMatrix()));  
     pass.draw(this.mRenderPackage.Geometry.GetPayload().Vertices.byteLength / this.mRenderPackage.Geometry.GetPayload().BufferLayout.GetStride());
+
+    // this.mthis.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Model, 0, new Float32Array(glm.mat4.create()));
+    // this.mthis.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.View, 0, new Float32Array(glm.mat4.create()));
+    // this.mthis.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Projection, 0, new Float32Array(glm.mat4.create()));  
+    // pass.draw(this.mRenderPackage.Geometry.GetPayload().Vertices.byteLength / this.mRenderPackage.Geometry.GetPayload().BufferLayout.GetStride());
 
     // End render pass
     pass.end();
 
     // Submit the command encoder
-    this.mPayload.Device.queue.submit([encoder.finish()]);
+    this.mDevice.mGPU.queue.submit([encoder.finish()]);
   }
 
   private mContext : GPUCanvasContext;
   private mCamera : PerspectiveCamera;
   private mMatrix : glm.mat4 = glm.mat4.create();
-  private mPayload : IAppPayload;
+  private mDevice : Device;
 
   private mRenderPackage : 
   {
@@ -178,7 +216,7 @@ export default class Renderer implements IRenderLayer {
     Geometry : Primitive,
     VertexBuffer : GPUBuffer,
     BindGroup : GPUBindGroup,
-    UBO : GPUBuffer,
+    UBO : {Model : GPUBuffer, View : GPUBuffer, Projection : GPUBuffer},
     Depth: {Texture : GPUTexture, TextureView : GPUTextureView},
     Color: {Texture : GPUTexture, TextureView : GPUTextureView},
   };
