@@ -1,21 +1,14 @@
+import Entity from "./ECS/Entity";
+import Input from "./Core/Input";
 import Device from "./Device";
-import Entity from "./Entity";
-import Input from "./Input";
-import RenderSystem from "./RenderSystem";
-import Renderer from "./Renderer";
-
-var lastFrame : number = performance.now();
-
-
+import Renderer from "./Renderer/Renderer";
+import { Utils } from "./Utils";
 
 export default class Program
 {
-    constructor() 
-    {
-        Input.ListenToEvents();
-    }
+    constructor() {}
     
-    async QueryForDevice() : Promise<void>
+    public async QueryForDevice() : Promise<void>
     {
         const adapter : GPUAdapter | null = await navigator.gpu.requestAdapter();
         if(!adapter) throw new Error("Failed to get GPU adapter!");
@@ -24,31 +17,26 @@ export default class Program
     
         this.Init(gpu);
     }
+    
+    public Run() : void 
+    {        
+        Utils.Time.Run(); // Updates current time and time between frames (delta time).
+
+        window.requestAnimationFrame(() => this.Run());
+    }
 
     private Init(gpu : GPUDevice) : void 
     {
         this.mDevice = new Device(gpu);   
         this.mRenderer = new Renderer(this.mDevice);
 
-        const canvas = document.querySelector("canvas") as HTMLCanvasElement;
-
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        Input.ListenToEvents();
+        Utils.Time.Begin();
     }
 
-    public Draw() : void 
-    {
-        const currentFrame = performance.now();
-        const ts = (currentFrame - lastFrame) / 1000; // Convert to milliseconds.
-        lastFrame = currentFrame;
-        
-        this.mRenderer.Draw(this.mRenderSystems, ts);
 
-        window.requestAnimationFrame(() => this.Draw());
-    }
 
     private mDevice !: Device;
     private mRenderer !: Renderer;
     private readonly mEntities : Entity[] = [];
-    private readonly mRenderSystems : RenderSystem[] = [];
 };

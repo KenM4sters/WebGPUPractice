@@ -1,10 +1,7 @@
 import * as glm from "gl-matrix"
-import { Primitive, Square } from "./Primitives";
-import squareShaderSrc from "../Shaders/Square.wgsl?raw";
-import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
-import Input from "./Input";
-import Device from "./Device";
-import { RenderSystem } from "./RenderSystem";
+import PerspectiveCamera, { CameraDirections } from "../Core/PerspectiveCamera";
+import Input from "../Core/Input";
+import Device from "../Device";
 
 export default class Renderer {
   constructor(d : Device) {
@@ -13,16 +10,13 @@ export default class Renderer {
     
     // Canvas
     const canvas = document.querySelector("canvas") as HTMLCanvasElement;
-
-    // Camera
-    this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 3.0), canvas.width, canvas.height);
-
     // Get the context so that we can query for its color texture and pass our scene texture.
     const context = canvas.getContext("webgpu");
     if (!context) throw new Error("Failed to get WebGPU context from canvas!");
     this.mContext = context;
 
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+
     this.mContext.configure({
       device: this.mDevice.mGPU,
       format: canvasFormat,
@@ -44,6 +38,9 @@ export default class Renderer {
 
     let colorTexture = this.mContext.getCurrentTexture();
     let colorTextureView = colorTexture.createView();
+
+
+    
 
     // Square
 
@@ -174,12 +171,13 @@ export default class Renderer {
     // Begin render pass
     const encoder = this.mDevice.mGPU.createCommandEncoder();
     const pass = encoder.beginRenderPass({
-        colorAttachments: [
+        colorAttachments: 
+        [
             {
                 view: this.mRenderPackage.Color.TextureView,
                 loadOp: "clear",
                 storeOp: "store",
-                clearValue: { r: 1.0, g: 0.5, b: 0.0, a: 1.0 },
+                clearValue: { r: 1.0, g: 0.5, b: 0.0, a: 1.0 }
             },
         ],
     });
@@ -207,18 +205,6 @@ export default class Renderer {
 
   private mContext : GPUCanvasContext;
   private mCamera : PerspectiveCamera;
-  private mMatrix : glm.mat4 = glm.mat4.create();
   private mDevice : Device;
-
-  private mRenderPackage : 
-  {
-    Pipeline : GPURenderPipeline,
-    Geometry : Primitive,
-    VertexBuffer : GPUBuffer,
-    BindGroup : GPUBindGroup,
-    UBO : {Model : GPUBuffer, View : GPUBuffer, Projection : GPUBuffer},
-    Depth: {Texture : GPUTexture, TextureView : GPUTextureView},
-    Color: {Texture : GPUTexture, TextureView : GPUTextureView},
-  };
 
 };

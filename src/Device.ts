@@ -1,4 +1,9 @@
 export default class Device 
 {
-    constructor(public readonly mGPU : GPUDevice) {}
-};
+    constructor(gpu : GPUDevice) 
+    {
+        this.mGPU = gpu;
+    }
+
+    public readonly mGPU : GPUDevice;
+}

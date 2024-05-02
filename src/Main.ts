@@ -5,7 +5,7 @@ async function Main() : Promise<void>
 {
     const program = new Program();
     await program.QueryForDevice();
-    program.Draw();
+    program.Run();
 }
 
 Main();
