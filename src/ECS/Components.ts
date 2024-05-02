@@ -5,14 +5,14 @@ import { Primitives } from "../Core/Primitives";
 
 export abstract class Component 
 {
-    constructor() {}
+    constructor(public readonly mLabel : string) {}
 };
 
 export class CameraComponent extends Component
 {
     constructor(projMat : glm.mat4, viewMat : glm.mat4, pos : glm.vec3) 
     {
-        super();
+        super("CameraComponent");
 
         this.mProjectionMatrix = projMat;
         this.mViewMatrix = viewMat;
@@ -27,24 +27,25 @@ export class CameraComponent extends Component
 
 export class MaterialComponent extends Component 
 {
-    constructor(shader : GPUShaderModule,  albedo : glm.vec3 | GPUTexture = glm.vec3.fromValues(1.0, 0.0, 0.0)) 
+    constructor(shaderIndex : Types.ShaderAssets, albedo : glm.vec3 | GPUTexture = glm.vec3.fromValues(1.0, 0.0, 0.0)) 
     {
-        super();
+        super("MaterialComponent");
 
-        this.mShaderModule = shader;
+        this.mShaderAssetIndex = shaderIndex;
         this.mAlbedo = albedo;  
     }
 
     public mAlbedo : glm.vec3 | GPUTexture;
-    public readonly mShaderModule : GPUShaderModule;
+    public mShaderAssetIndex : Types.ShaderAssets;
+
 }
 
 
 export class SquareGeometryComponent extends Component 
 {
-    constructor() 
+    constructor(device : GPUDevice) 
     {
-        super();
+        super("SquareGeometryComponent");
 
         const vertices : typeof Primitives.SQUARE_VERTICES = Primitives.SQUARE_VERTICES;
         const bufferLayout = new BufferLayout([
@@ -56,9 +57,15 @@ export class SquareGeometryComponent extends Component
             Vertices: vertices,
             BufferLayout: bufferLayout
         };
+        this.mGPUBuffer = device.createBuffer({
+            label: "Square Vertex Buffer",
+            size: this.mData.Vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        });
     }
 
     public readonly mData : Types.IPrimitivePayload;
+    public readonly mGPUBuffer : GPUBuffer;
 }
 
 
@@ -67,7 +74,7 @@ export class TransformComponent extends Component
 {
     constructor(position : glm.vec3 = glm.vec3.create()) 
     {
-        super();
+        super("TransformComponent");
         this.mPosition = position;
     }
 

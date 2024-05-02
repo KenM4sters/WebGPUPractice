@@ -90,25 +90,3 @@ export class BufferLayout
     public readonly mAttribs : BufferAttribute[] = [];
     private mStride : number = 0;  
 };
-
-
-//----------------------------------------------------------------
-// Uniform Buffer Objects
-//----------------------------------------------------------------
-
-export class UniformBuffer 
-{
-    constructor(label : string, data : any, size : number) 
-    {
-        this.mLabel = label;
-        this.mBufferData = data;
-        this.mBufferSize = size;
-
-    }
-
-    
-    private readonly mLabel : string;
-    private readonly mBuffer !: GPUBuffer;
-    private readonly mBufferData : any;
-    private readonly mBufferSize : number;
-}

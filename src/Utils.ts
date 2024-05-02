@@ -90,15 +90,17 @@ export namespace Utils
         // Conversion functions to convert between custom types and native
         // WebGPU types.
         //----------------------------------------------------------------
-        namespace ConversionFunctions 
+        export function DeepCopy<T>(obj : T) : T
         {
-            export function GetDataTypeSize(type : Types.EDataType) : number 
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        export function GetDataTypeSize(type : Types.EDataType) : number 
+        {
+            switch(type) 
             {
-                switch(type) 
-                {
-                    case Types.EDataType.FLOAT : return 4;
-                    case Types.EDataType.INT : return 4;
-                }
+                case Types.EDataType.FLOAT : return 4;
+                case Types.EDataType.INT : return 4;
             }
         }
 }

@@ -1,52 +1,62 @@
-import { CameraComponent } from "./Components";
+import AssetManager from "../AssetManager";
+import { Types } from "../Types";
+import { CameraComponent, SquareGeometryComponent, TransformComponent } from "./Components";
 import Entity from "./Entity";
  
 export abstract class System 
 {
-    constructor() 
+    constructor(device : GPUDevice) 
     {
-
+        this.mDevice = device;
     }
-
-    public abstract Submit(e : Entity) : void;
 
     public abstract Run(pass : GPURenderPassEncoder) : void;
 
+    public abstract CollectEntites() : void;
+
     public readonly mEntities : Entity[] = [];
+    public readonly mDevice : GPUDevice;
 };
 
 
 export class SpriteRenderer extends System 
 {
-    constructor() 
+    constructor(device : GPUDevice) 
     {
-        super();
+        super(device);
+        this.CollectEntites();
     }
-
-    public Submit(e: Entity): void {
-        let isSprite : boolean = false;
-
-        for(const c of e.mComponents) 
+    
+    public CollectEntites(): void {
+        for(const e of AssetManager.GetAllEntities()) 
         {
-            if(c instanceof CameraComponent) isSprite = true;
+            if(e.GetComponent("SquareGeometryComponent")) this.mEntities.push(e);
             else continue;
         }
-
-        isSprite ? this.mEntities.push(e) 
-            : console.warn("Entity submitted to SpriteRenderer did not contain any Camera Component - Discarding.");
     }
 
     public Run(pass : GPURenderPassEncoder): void {
-        pass.setBindGroup(0, this.mRenderPackage.BindGroup);
+        pass.setPipeline(AssetManager.GetPipeline(Types.PipelineAssets.BasicSpritePipeline));
+        pass.setBindGroup(0, AssetManager.GetBindGroup(Types.BindGroupAssets.CameraGroup));
+        pass.setBindGroup(1, AssetManager.GetBindGroup(Types.BindGroupAssets.BasicMaterialGroup));
+        pass.setBindGroup(2, AssetManager.GetBindGroup(Types.BindGroupAssets.TransformGroup));
 
         for(const e of this.mEntities) 
-        {            
-            pass.setPipeline(this.mRenderPackage.Pipeline);
-            pass.setVertexBuffer(0, this.mRenderPackage.VertexBuffer);
-            this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Model, 0, new Float32Array(this.mMatrix));
-            this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.View, 0, new Float32Array(this.mCamera.GetViewMatrix()));
-            this.mDevice.mGPU.queue.writeBuffer(this.mRenderPackage.UBO.Projection, 0, new Float32Array(this.mCamera.GetProjectionMatrix()));  
-            pass.draw(this.mRenderPackage.Geometry.GetPayload().Vertices.byteLength / this.mRenderPackage.Geometry.GetPayload().BufferLayout.GetStride());
-        }
+        {  
+            const geometry = e.GetComponent("SquareGeometryComponent") as SquareGeometryComponent | undefined;
+            if(!geometry) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Geometry Component"); continue; }
+
+            const camera = e.GetComponent("CameraComponent") as CameraComponent | undefined;
+            if(!camera) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Camera Component"); continue; }
+
+            const transform = e.GetComponent("TransformComponent") as TransformComponent | undefined;
+            if(!transform) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Camera Component"); continue; }
+
+            pass.setVertexBuffer(0, geometry.mGPUBuffer);
+            this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO) , 16*4, new Float32Array(transform.mModelMatrix));
+            this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO) , 16*4*2, new Float32Array(camera.mViewMatrix));
+            this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO) , (16*4) + (16*4*2), new Float32Array(camera.mProjectionMatrix));  
+            pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride());
+        };
     }
 };

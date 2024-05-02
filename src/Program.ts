@@ -1,8 +1,7 @@
-import Entity from "./ECS/Entity";
-import Input from "./Core/Input";
 import Device from "./Device";
 import Renderer from "./Renderer/Renderer";
 import { Utils } from "./Utils";
+import Scene from "./Core/Scene";
 
 export default class Program
 {
@@ -22,15 +21,25 @@ export default class Program
     {        
         Utils.Time.Run(); // Updates current time and time between frames (delta time).
 
+        this.mRenderer.Draw();
+
+        this.HandleUserInput();
+
         window.requestAnimationFrame(() => this.Run());
+    }
+
+    public HandleUserInput()
+    {
+        this.mRenderer.HandleUserInput();
+        this.mScene.HandleUserInput();
     }
 
     private Init(gpu : GPUDevice) : void 
     {
         this.mDevice = new Device(gpu);   
+        this.mScene = new Scene(this.mDevice.mGPU);
         this.mRenderer = new Renderer(this.mDevice);
 
-        Input.ListenToEvents();
         Utils.Time.Begin();
     }
 
@@ -38,5 +47,5 @@ export default class Program
 
     private mDevice !: Device;
     private mRenderer !: Renderer;
-    private readonly mEntities : Entity[] = [];
+    private mScene !: Scene;
 };
