@@ -1,7 +1,6 @@
 import * as glm from "gl-matrix";
 import { Utils } from "../Utils";
 import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
-
 import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
 import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
 import Input from "./Input";
@@ -10,21 +9,21 @@ import Entity from "../ECS/Entity";
 import AssetManager from "../AssetManager";
 
 
-export default class Scene 
+export default class Scene implements Types.IApplicationLayer
 {
     constructor(device : GPUDevice) 
     {
-        this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 3.0), Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight);
+        this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 10.0), Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight);
 
         this.LoadAndGenerateAssets(device);
 
     }
 
-    public HandleUserInput() : void 
+    public ListenToUserInput() : void 
     {   
         const cPlayer = AssetManager.GetEntity(Types.EntityAssets.simpleSquare) as Entity;
         let cTransforms = cPlayer.GetComponent("TransformComponent") as TransformComponent;
-
+        
         if(Input.IsKeyPressed("w")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(0.0*Utils.Time.GetDeltaTime()*5.0, 1.0*Utils.Time.GetDeltaTime()*5.0, 0.0));  
         if(Input.IsKeyPressed("a")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(-1.0*Utils.Time.GetDeltaTime()*5.0, 0.0*Utils.Time.GetDeltaTime()*5.0, 0.0));  
         if(Input.IsKeyPressed("s")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(0.0*Utils.Time.GetDeltaTime()*5.0, -1.0*Utils.Time.GetDeltaTime()*5.0, 0.0));  
@@ -34,6 +33,11 @@ export default class Scene
         if(Input.IsKeyPressed("ArrowLeft")) this.mCamera.ProcessUserInput(CameraDirections.LEFT);
         if(Input.IsKeyPressed("ArrowDown")) this.mCamera.ProcessUserInput(CameraDirections.DOWN);
         if(Input.IsKeyPressed("ArrowRight")) this.mCamera.ProcessUserInput(CameraDirections.RIGHT); 
+    }
+
+    public OnCanvasResize(w : number, h : number) : void
+    {
+        this.mCamera.UpdateProjectionMatrix(w, h);
     }
 
     private LoadAndGenerateAssets(device : GPUDevice) : void 
@@ -47,7 +51,7 @@ export default class Scene
         let basicMaterial = new MaterialComponent(Types.ShaderAssets.BasicMaterial);
         let camera = new CameraComponent(this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
 
-        let squareEntity = new Entity([Utils.DeepCopy(simpleSquare), Utils.DeepCopy(transform), Utils.DeepCopy(basicMaterial), Utils.DeepCopy(camera)]);
+        let squareEntity = new Entity([simpleSquare, transform, basicMaterial, camera]);
         AssetManager.SubmitEntity(squareEntity);
 
         //----------------------------------------------------------------
@@ -73,7 +77,7 @@ export default class Scene
 
         const cCameraUBO = device.createBuffer({
             label: "Camera UBO",
-            size: (4*16) + (4*16) + (4*3), // 2 4x4 matrices and 1 vec3.
+            size: 144, // 2 4x4 matrices and 1 vec3 + 4 bytes of padding for a struct.
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
@@ -127,7 +131,7 @@ export default class Scene
             [
                 {
                     binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT,
+                    visibility: GPUShaderStage.VERTEX,
                     buffer: {}
                 },
             ]

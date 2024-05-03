@@ -11,11 +11,10 @@ export namespace Types
         val : T;
     };
     
-    export interface IRenderLayer 
+    export interface IApplicationLayer 
     {
-        Draw(ts : number) : void;
-        Resize() : void;
-        Respond() : void;
+        OnCanvasResize(w : number, h : number) : void;
+        ListenToUserInput() : void;
     };
     
     export interface IPrimitivePayload 

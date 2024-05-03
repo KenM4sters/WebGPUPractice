@@ -47,44 +47,50 @@ export namespace Utils
     //----------------------------------------------------------------
     export class Sizes 
     {
-        constructor() 
-        {   
-            window.addEventListener("resize", () => Sizes.OnResize());
-            Sizes.OnResize();
+        private constructor() {}
+
+        public static ListenToResize(callback : (w : number, h : number) => void) : void 
+        {
+            this.mCanvasWidth = window.innerWidth;
+            this.mCanvasHeight = window.innerHeight;
+
+            const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+
+            canvas.width = this.mCanvasWidth;
+            canvas.height = this.mCanvasHeight;
+
+            window.addEventListener("resize", () => Sizes.OnResize(callback));
         }
         
-        private static OnResize() : void 
+        private static OnResize(callback : (w : number, h : number) => void) : void 
         {
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
             
             if(Sizes.mCanvasWidth != windowWidth || Sizes.mCanvasHeight != windowHeight) 
-                {
-                    Sizes.mCanvasWidth = windowWidth * Sizes.mDevicePixelRatio;
-                    Sizes.mCanvasHeight = windowHeight * Sizes.mDevicePixelRatio;
-                    
-                    const canvas = document.querySelector("canvas") as HTMLCanvasElement;
-                    
-                    canvas.width = Sizes.mCanvasWidth;
-                    canvas.height = Sizes.mCanvasHeight;
-                }
-            }
-            
-            public SetSize(w : number, h : number) : void 
             {
-                Sizes.mCanvasWidth = w;
-                Sizes.mCanvasHeight = h;
+                Sizes.mCanvasWidth = windowWidth;
+                Sizes.mCanvasHeight = windowHeight;
+                
+                const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+                
+                canvas.width = Sizes.mCanvasWidth;
+                canvas.height = Sizes.mCanvasHeight;
             }
+
+            callback(this.mCanvasWidth, this.mCanvasHeight);
+        }
             
-            public static mCanvasWidth : number = window.innerWidth;
-            public static mCanvasHeight : number = window.innerHeight;
-            public static readonly mDevicePixelRatio : number = Math.min(2, window.devicePixelRatio);
-        };
-
-
-
-
-
+        public SetSize(w : number, h : number) : void 
+        {
+            Sizes.mCanvasWidth = w;
+            Sizes.mCanvasHeight = h;
+        }
+            
+        public static mCanvasWidth : number;
+        public static mCanvasHeight : number;
+        public static readonly mDevicePixelRatio : number = Math.min(2, window.devicePixelRatio);
+    };
 
         //----------------------------------------------------------------
         // Conversion functions to convert between custom types and native

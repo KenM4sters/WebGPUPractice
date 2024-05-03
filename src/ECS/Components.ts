@@ -47,7 +47,7 @@ export class SquareGeometryComponent extends Component
     {
         super("SquareGeometryComponent");
 
-        const vertices : typeof Primitives.SQUARE_VERTICES = Primitives.SQUARE_VERTICES;
+        const vertices : Float32Array = Primitives.SQUARE_VERTICES;
         const bufferLayout = new BufferLayout([
             new BufferAttribute("SquarePositionAttrib", 0, "float32x3")
         ]);
@@ -61,7 +61,7 @@ export class SquareGeometryComponent extends Component
             label: "Square Vertex Buffer",
             size: this.mData.Vertices.byteLength,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-        });
+        });        
     }
 
     public readonly mData : Types.IPrimitivePayload;

@@ -23,6 +23,8 @@ fn mainVert(@location(0) pos: vec3f) -> VertexOutput
     return output;
 }
 
+
+
 @fragment
 fn mainFrag() -> @location(0) vec4f 
 {
