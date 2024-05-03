@@ -1,10 +1,14 @@
 import Device from "../Device";
-import { SpriteRenderer } from "../ECS/Systems";
+import { SpriteRenderer } from "../ECS/SpriteSystem";
 import { Types } from "../Types";
 import { Utils } from "../Utils";
 
-export default class Renderer implements Types.IApplicationLayer {
+
+
+export default class Renderer implements Types.IApplicationLayer 
+{
     constructor(d: Device) {
+
         this.mDevice = d;
         this.mSpriteSystem = new SpriteRenderer(this.mDevice.mGPU);
 
@@ -21,39 +25,65 @@ export default class Renderer implements Types.IApplicationLayer {
         this.mContext.configure({
             device: this.mDevice.mGPU,
             format: canvasFormat,
+            alphaMode: "premultiplied"
         });
 
-        let depthTexture: GPUTexture;
-        let depthTextureView: GPUTextureView;
+        // // Render Pass Configuration.
+        // //
+        // let depthTextureView: GPUTextureView;
+        // let colorTextureView: GPUTextureView;
 
-        const depthTextureDesc: GPUTextureDescriptor = {
-            size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
-            dimension: "2d",
-            format: "depth24plus-stencil8",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-        };
+        // const depthTextureDesc: GPUTextureDescriptor = {
+        //     size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
+        //     format: "depth24plus",
+        //     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+        // };
 
-        depthTexture = this.mDevice.mGPU.createTexture(depthTextureDesc);
-        depthTextureView = depthTexture.createView();
+        // // Set Target Texture for the render pass.
+        // colorTextureView = this.mContext.getCurrentTexture().createView();
+        // depthTextureView = this.mDevice.mGPU.createTexture(depthTextureDesc).createView();
+
     }
 
     public Draw(): void {
-        // Set Target Texture for the render pass.
-        const texView = this.mContext.getCurrentTexture().createView();
+
+        const depthTextureDesc: GPUTextureDescriptor = {
+            size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
+            format: "depth24plus",
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+        };
+
+        this.mRenderPass =
+        {
+            Desc:
+            {
+                colorAttachments: [
+                    {
+                        view: this.mContext.getCurrentTexture().createView(), // Assigned later
+
+                        clearValue: [0.1, 0.1, 0.1, 1.0],
+                        loadOp: 'clear',
+                        storeOp: 'store',
+                    },
+                ],
+                depthStencilAttachment: {
+                    view: this.mDevice.mGPU.createTexture(depthTextureDesc).createView(),
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'clear',
+                    depthStoreOp: 'store',
+                },
+            }
+        }
+
+        // Update Buffers for each Render System.
+        this.mSpriteSystem.UpdateState();
 
         // Begin render pass
         const encoder = this.mDevice.mGPU.createCommandEncoder();
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view: texView,
-                    loadOp: "clear",
-                    storeOp: "store",
-                    clearValue: { r: 1.0, g: 0.5, b: 0.0, a: 1.0 },
-                },
-            ],
-        });
 
+        const pass = encoder.beginRenderPass(this.mRenderPass.Desc);
+
+        // Run each Render System.
         this.mSpriteSystem.Run(pass);
 
         // End render pass
@@ -66,21 +96,48 @@ export default class Renderer implements Types.IApplicationLayer {
     public ListenToUserInput(): void { }
 
     public OnCanvasResize(w: number, h: number): void {
-        let depthTexture: GPUTexture;
+
+        // Render Pass Configuration.
+        //
         let depthTextureView: GPUTextureView;
+        let colorTextureView: GPUTextureView;
 
         const depthTextureDesc: GPUTextureDescriptor = {
             size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
-            dimension: "2d",
-            format: "depth24plus-stencil8",
+            format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
         };
 
-        depthTexture = this.mDevice.mGPU.createTexture(depthTextureDesc);
-        depthTextureView = depthTexture.createView();
+        // Set Target Texture for the render pass.
+        colorTextureView = this.mContext.getCurrentTexture().createView();
+        depthTextureView = this.mDevice.mGPU.createTexture(depthTextureDesc).createView();
+
+        this.mRenderPass =
+        {
+            Desc:
+            {
+                colorAttachments: [
+                    {
+                        view: colorTextureView, // Assigned later
+
+                        clearValue: [0.1, 0.1, 0.1, 1.0],
+                        loadOp: 'clear',
+                        storeOp: 'store',
+                    },
+                ],
+                depthStencilAttachment: {
+                    view: depthTextureView,
+
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'clear',
+                    depthStoreOp: 'store',
+                },
+            }
+        }
     }
 
-    private mContext: GPUCanvasContext;
-    private mDevice: Device;
-    private mSpriteSystem: SpriteRenderer;
+    private mContext : GPUCanvasContext;
+    private mDevice : Device;
+    private mSpriteSystem : SpriteRenderer;
+    private mRenderPass !: Types.IRenderPass;
 }

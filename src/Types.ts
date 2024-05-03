@@ -16,6 +16,11 @@ export namespace Types
         OnCanvasResize(w : number, h : number) : void;
         ListenToUserInput() : void;
     };
+
+    export interface IRenderPass 
+    {
+        Desc : GPURenderPassDescriptor;
+    }
     
     export interface IPrimitivePayload 
     {
@@ -42,7 +47,8 @@ export namespace Types
 
     export enum EntityAssets
     {
-        simpleSquare = 0,
+        Player = 0,
+        Platform = 1,
     }
 
     export enum BindGroupAssets 

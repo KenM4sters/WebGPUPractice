@@ -15,14 +15,15 @@ export default class Scene implements Types.IApplicationLayer
     {
         this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 10.0), Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight);
 
-        this.LoadAndGenerateAssets(device);
+        this.PrepareScene(device);
 
+        this.LoadAndGenerateAssets(device);
     }
 
     public ListenToUserInput() : void 
     {   
-        const cPlayer = AssetManager.GetEntity(Types.EntityAssets.simpleSquare) as Entity;
-        let cTransforms = cPlayer.GetComponent("TransformComponent") as TransformComponent;
+        const cPlayer = AssetManager.GetEntity(Types.EntityAssets.Player) as Entity;
+        let cTransforms = cPlayer.GetComponent(`${cPlayer.mLabel + `_Transform_Component`}`) as TransformComponent;
         
         if(Input.IsKeyPressed("w")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(0.0*Utils.Time.GetDeltaTime()*5.0, 1.0*Utils.Time.GetDeltaTime()*5.0, 0.0));  
         if(Input.IsKeyPressed("a")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(-1.0*Utils.Time.GetDeltaTime()*5.0, 0.0*Utils.Time.GetDeltaTime()*5.0, 0.0));  
@@ -40,25 +41,58 @@ export default class Scene implements Types.IApplicationLayer
         this.mCamera.UpdateProjectionMatrix(w, h);
     }
 
+    private PrepareScene(device : GPUDevice) : void 
+    {
+        // Global
+        //
+        // let camera = new CameraComponent(this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
+        // let simpleSquare = new SquareGeometryComponent(device);
+        
+        // Player
+        //
+        let playerTransform = new TransformComponent("Player_Transform_Component");
+        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicMaterial);
+        let playerCamera = new CameraComponent("Player_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
+        let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
+        
+        playerMat.mAlbedo = glm.vec3.fromValues(1.0, 0.2, 0.1);
+        
+        let playerEntity = new Entity([playerSimpleSquare, playerTransform, playerMat, playerCamera], "Player");
+        AssetManager.SubmitEntity(playerEntity);
+
+        // Platform
+        //
+        let platformTransform = new TransformComponent("Platform_Transform_Component");
+        let platformMat = new MaterialComponent("Platform_Material_Component", Types.ShaderAssets.BasicMaterial);
+        let platformCamera = new CameraComponent("Platform_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
+        let platformSimpleSquare = new SquareGeometryComponent("Platform_Geometry_Component", device);
+
+        glm.mat4.translate(platformTransform.mModelMatrix, platformTransform.mModelMatrix, glm.vec3.fromValues(1.5, 0.0, 0.0));
+        platformMat.mAlbedo = glm.vec3.fromValues(0.2, 0.5, 1.0);
+
+        let platformEntity = new Entity([platformSimpleSquare, platformTransform, platformMat, platformCamera], "Platform");
+        AssetManager.SubmitEntity(platformEntity);
+
+    }
+
     private LoadAndGenerateAssets(device : GPUDevice) : void 
     {
         //----------------------------------------------------------------
         // Components
         //----------------------------------------------------------------
 
-        let simpleSquare = new SquareGeometryComponent(device);
-        let transform = new TransformComponent();
-        let basicMaterial = new MaterialComponent(Types.ShaderAssets.BasicMaterial);
-        let camera = new CameraComponent(this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
-
-        let squareEntity = new Entity([simpleSquare, transform, basicMaterial, camera]);
-        AssetManager.SubmitEntity(squareEntity);
+        const cPlayerEntity = AssetManager.GetEntity(Types.EntityAssets.Player) as Entity;
+        const cPlayerGeometry = cPlayerEntity.GetComponent("Player_Geometry_Component") as SquareGeometryComponent;
+        
+        // const cPlatformEntity = AssetManager.GetEntity(Types.EntityAssets.Platform) as Entity;
+        // const cPlatformGeometry = cPlatformEntity.GetComponent("Platform_Geometry_Component") as SquareGeometryComponent;
 
         //----------------------------------------------------------------
         // Vertex Buffers.
         //----------------------------------------------------------------
-
-        device.queue.writeBuffer(simpleSquare.mGPUBuffer, 0, simpleSquare.mData.Vertices);
+        
+        device.queue.writeBuffer(cPlayerGeometry.mGPUBuffer, 0, cPlayerGeometry.mData.Vertices);
+        // device.queue.writeBuffer(cPlatformGeometry.mGPUBuffer, 0, cPlatformGeometry.mData.Vertices);
 
         //----------------------------------------------------------------
         // Shader Modules.
@@ -205,7 +239,7 @@ export default class Scene implements Types.IApplicationLayer
                 entryPoint: "mainVert",
                 buffers: 
                 [
-                    simpleSquare.mData.BufferLayout.GetNativeLayout()
+                    cPlayerGeometry.mData.BufferLayout.GetNativeLayout()
                 ]
             },
             fragment: 
@@ -218,6 +252,17 @@ export default class Scene implements Types.IApplicationLayer
                         format: navigator.gpu.getPreferredCanvasFormat()
                     }
                 ]
+            },
+            depthStencil: 
+            {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            },
+
+            primitive: {
+                topology: "triangle-strip",
+                cullMode: "back"
             }
         });
 

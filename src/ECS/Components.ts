@@ -10,9 +10,9 @@ export abstract class Component
 
 export class CameraComponent extends Component
 {
-    constructor(projMat : glm.mat4, viewMat : glm.mat4, pos : glm.vec3) 
+    constructor(label : string, projMat : glm.mat4, viewMat : glm.mat4, pos : glm.vec3) 
     {
-        super("CameraComponent");
+        super(label);
 
         this.mProjectionMatrix = projMat;
         this.mViewMatrix = viewMat;
@@ -27,9 +27,9 @@ export class CameraComponent extends Component
 
 export class MaterialComponent extends Component 
 {
-    constructor(shaderIndex : Types.ShaderAssets, albedo : glm.vec3 | GPUTexture = glm.vec3.fromValues(1.0, 0.0, 0.0)) 
+    constructor(label : string, shaderIndex : Types.ShaderAssets, albedo : glm.vec3 | GPUTexture = glm.vec3.fromValues(1.0, 0.0, 0.0)) 
     {
-        super("MaterialComponent");
+        super(label);
 
         this.mShaderAssetIndex = shaderIndex;
         this.mAlbedo = albedo;  
@@ -43,9 +43,9 @@ export class MaterialComponent extends Component
 
 export class SquareGeometryComponent extends Component 
 {
-    constructor(device : GPUDevice) 
+    constructor(label : string, device : GPUDevice) 
     {
-        super("SquareGeometryComponent");
+        super(label);
 
         const vertices : Float32Array = Primitives.SQUARE_VERTICES;
         const bufferLayout = new BufferLayout([
@@ -58,7 +58,7 @@ export class SquareGeometryComponent extends Component
             BufferLayout: bufferLayout
         };
         this.mGPUBuffer = device.createBuffer({
-            label: "Square Vertex Buffer",
+            label: `${this.mLabel + `_Buffer`}`,
             size: this.mData.Vertices.byteLength,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
         });        
@@ -72,9 +72,9 @@ export class SquareGeometryComponent extends Component
 
 export class TransformComponent extends Component 
 {
-    constructor(position : glm.vec3 = glm.vec3.create()) 
+    constructor(label : string, position : glm.vec3 = glm.vec3.create()) 
     {
-        super("TransformComponent");
+        super(label);
         this.mPosition = position;
     }
 
