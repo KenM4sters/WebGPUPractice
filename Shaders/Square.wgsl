@@ -21,7 +21,7 @@ fn mainVert(@location(0) pos: vec3f) -> VertexOutput
     var output : VertexOutput;
     output.Position = camera.Projection * camera.View * model * vec4f(pos, 1.0);
     return output;
-}
+}   
 
 
 

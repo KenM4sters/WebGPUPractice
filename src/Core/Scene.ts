@@ -51,19 +51,19 @@ export default class Scene implements Types.IApplicationLayer
         // Player
         //
         let playerTransform = new TransformComponent("Player_Transform_Component");
-        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicMaterial);
+        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader);
         let playerCamera = new CameraComponent("Player_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
         let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
         
         playerMat.mAlbedo = glm.vec3.fromValues(1.0, 0.2, 0.1);
         
         let playerEntity = new Entity([playerSimpleSquare, playerTransform, playerMat, playerCamera], "Player");
-        AssetManager.SubmitEntity(playerEntity);
+        AssetManager.SubmitEntity(playerEntity, Types.EntityAssets.Player);
 
         // Platform
         //
         let platformTransform = new TransformComponent("Platform_Transform_Component");
-        let platformMat = new MaterialComponent("Platform_Material_Component", Types.ShaderAssets.BasicMaterial);
+        let platformMat = new MaterialComponent("Platform_Material_Component", Types.ShaderAssets.BasicShader);
         let platformCamera = new CameraComponent("Platform_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
         let platformSimpleSquare = new SquareGeometryComponent("Platform_Geometry_Component", device);
 
@@ -71,7 +71,7 @@ export default class Scene implements Types.IApplicationLayer
         platformMat.mAlbedo = glm.vec3.fromValues(0.2, 0.5, 1.0);
 
         let platformEntity = new Entity([platformSimpleSquare, platformTransform, platformMat, platformCamera], "Platform");
-        AssetManager.SubmitEntity(platformEntity);
+        AssetManager.SubmitEntity(platformEntity, Types.EntityAssets.Platform);
 
     }
 
@@ -84,26 +84,26 @@ export default class Scene implements Types.IApplicationLayer
         const cPlayerEntity = AssetManager.GetEntity(Types.EntityAssets.Player) as Entity;
         const cPlayerGeometry = cPlayerEntity.GetComponent("Player_Geometry_Component") as SquareGeometryComponent;
         
-        // const cPlatformEntity = AssetManager.GetEntity(Types.EntityAssets.Platform) as Entity;
-        // const cPlatformGeometry = cPlatformEntity.GetComponent("Platform_Geometry_Component") as SquareGeometryComponent;
+        const cPlatformEntity = AssetManager.GetEntity(Types.EntityAssets.Platform) as Entity;
+        const cPlatformGeometry = cPlatformEntity.GetComponent("Platform_Geometry_Component") as SquareGeometryComponent;
 
         //----------------------------------------------------------------
         // Vertex Buffers.
         //----------------------------------------------------------------
         
         device.queue.writeBuffer(cPlayerGeometry.mGPUBuffer, 0, cPlayerGeometry.mData.Vertices);
-        // device.queue.writeBuffer(cPlatformGeometry.mGPUBuffer, 0, cPlatformGeometry.mData.Vertices);
+        device.queue.writeBuffer(cPlatformGeometry.mGPUBuffer, 0, cPlatformGeometry.mData.Vertices);
 
         //----------------------------------------------------------------
         // Shader Modules.
         //----------------------------------------------------------------
 
-        const cSimpleSquareShader : GPUShaderModule = device.createShaderModule({
+        const cBasicShaderModule : GPUShaderModule = device.createShaderModule({
             label: "Simple Square Shader",
             code: simpleSquareShaderSrc
         });
 
-        AssetManager.SubmitShader(cSimpleSquareShader);
+        AssetManager.SubmitShader(cBasicShaderModule, Types.ShaderAssets.BasicShader);
 
         //----------------------------------------------------------------
         // Uniform Buffer Objects.
@@ -115,28 +115,48 @@ export default class Scene implements Types.IApplicationLayer
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
-        const cBasicMaterialUBO = device.createBuffer({
-            label: "Basic Material UBO",
+        // Player
+        //
+        const cPlayerMaterialUBO = device.createBuffer({
+            label: "Player_Material_UBO",
             size: (4*3),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
-        const cTransformUBO = device.createBuffer({
-            label: "Transform UBO",
+        const cPlayerTransformUBO = device.createBuffer({
+            label: "Player_Transform_UBO",
+            size: (4*16),
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+
+        // Platform
+        //
+        const cPlatformMaterialUBO = device.createBuffer({
+            label: "Platform_Material_UBO",
+            size: (4*3),
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+
+        const cPlatformTransformUBO = device.createBuffer({
+            label: "Transform_UBO",
             size: (4*16),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
         
-        AssetManager.SubmitUBO(cCameraUBO);
-        AssetManager.SubmitUBO(cBasicMaterialUBO);
-        AssetManager.SubmitUBO(cTransformUBO);
+        AssetManager.SubmitUBO(cCameraUBO, Types.UBOAssets.CameraUBO);
+
+        AssetManager.SubmitUBO(cPlayerMaterialUBO, Types.UBOAssets.PlayerMaterialUBO);
+        AssetManager.SubmitUBO(cPlayerTransformUBO, Types.UBOAssets.PlayerTransformUBO);
+
+        AssetManager.SubmitUBO(cPlatformMaterialUBO, Types.UBOAssets.PlatformMaterialUBO);
+        AssetManager.SubmitUBO(cPlatformTransformUBO, Types.UBOAssets.PlatformTransformUBO);
 
         //----------------------------------------------------------------
         // Bind Group Layouts
         //----------------------------------------------------------------
 
         const cCameraBindGroupLayout : GPUBindGroupLayout = device.createBindGroupLayout({
-            label: "Camera Bind Group Layout",
+            label: "Camera_Bind_Group_Layout",
             entries: 
             [
                 {
@@ -148,7 +168,7 @@ export default class Scene implements Types.IApplicationLayer
         });
 
         const cBasicMaterialBindGroupLayout : GPUBindGroupLayout = device.createBindGroupLayout({
-            label: "Basic Material Bind Group Layout",
+            label: "Basic_Material_Bind_Group_Layout",
             entries: 
             [
                 {
@@ -160,7 +180,7 @@ export default class Scene implements Types.IApplicationLayer
         });
 
         const cTransformBindGroupLayout : GPUBindGroupLayout = device.createBindGroupLayout({
-            label: "Basic Material Bind Group Layout",
+            label: "Transform_Bind_Group_Layout",
             entries: 
             [
                 {
@@ -177,7 +197,7 @@ export default class Scene implements Types.IApplicationLayer
         //----------------------------------------------------------------
         
         const cCameraBindGroup : GPUBindGroup = device.createBindGroup({
-            label: "Camera Bind Group",
+            label: "Camera_Bind_Group",
             layout: cCameraBindGroupLayout,
             entries: 
             [
@@ -188,40 +208,73 @@ export default class Scene implements Types.IApplicationLayer
             ]
         });
 
-        const cBasicMaterialBindGroup : GPUBindGroup = device.createBindGroup({
-            label: "Basic Material Bind Group",
+        // Player
+        // 
+        const cPlayerMaterialBindGroup : GPUBindGroup = device.createBindGroup({
+            label: "Player_Material_Bind_Group",
             layout: cBasicMaterialBindGroupLayout,
             entries: 
             [
                 {
                     binding: 0,
-                    resource: {buffer: cBasicMaterialUBO}
+                    resource: {buffer: cPlayerMaterialUBO}
                 },
             ]
         });
 
-        const cTransformBindGroup : GPUBindGroup = device.createBindGroup({
-            label: "Transform Bind Group",
+        const cPlayerTransformBindGroup : GPUBindGroup = device.createBindGroup({
+            label: "Player_Transform_Bind_Group",
             layout: cTransformBindGroupLayout,
             entries: 
             [
                 {
                     binding: 0,
-                    resource: {buffer: cTransformUBO}
+                    resource: {buffer: cPlayerTransformUBO}
                 },
             ]
         });
 
-        AssetManager.SubmitBindGroup(cCameraBindGroup);
-        AssetManager.SubmitBindGroup(cBasicMaterialBindGroup);
-        AssetManager.SubmitBindGroup(cTransformBindGroup);
+        // Platform
+        // 
+        const cPlatformMaterialBindGroup : GPUBindGroup = device.createBindGroup({
+            label: "Platform_Material_Bind_Group",
+            layout: cBasicMaterialBindGroupLayout,
+            entries: 
+            [
+                {
+                    binding: 0,
+                    resource: {buffer: cPlatformMaterialUBO}
+                },
+            ]
+        });
+
+        const cPlatformTransformBindGroup : GPUBindGroup = device.createBindGroup({
+            label: "Platform_Transform_Bind_Group",
+            layout: cTransformBindGroupLayout,
+            entries: 
+            [
+                {
+                    binding: 0,
+                    resource: {buffer: cPlatformTransformUBO}
+                },
+            ]
+        });
+
+
+        AssetManager.SubmitBindGroup(cCameraBindGroup, Types.BindGroupAssets.CameraGroup);
+
+        AssetManager.SubmitBindGroup(cPlayerMaterialBindGroup, Types.BindGroupAssets.PlayerMaterialBindGroup);
+        AssetManager.SubmitBindGroup(cPlayerTransformBindGroup, Types.BindGroupAssets.PlayerTransformBindGroup);
+
+        AssetManager.SubmitBindGroup(cPlatformMaterialBindGroup, Types.BindGroupAssets.PlatformMaterialBindGroup);
+        AssetManager.SubmitBindGroup(cPlatformTransformBindGroup, Types.BindGroupAssets.PlatformTransformBindGroup);
 
         //----------------------------------------------------------------
         // Render Pipelines
         //----------------------------------------------------------------
 
         const cSimpleSquarePipelineLayout : GPUPipelineLayout = device.createPipelineLayout({
-            label: "Simple Square Pipeline Layout",
+            label: "Simple_Square_Pipeline_Layout",
             bindGroupLayouts: 
             [
                 cCameraBindGroupLayout,         // @Group(0)
@@ -230,12 +283,14 @@ export default class Scene implements Types.IApplicationLayer
             ]
         });
 
+        // Player
+        //
         const cSimpleSquarePipeline : GPURenderPipeline = device.createRenderPipeline({
-            label: "Simple Square Render Pipeline",
+            label: "Simple_Square_Render_Pipeline",
             layout: cSimpleSquarePipelineLayout,
             vertex: 
             {
-                module: cSimpleSquareShader,
+                module: cBasicShaderModule,
                 entryPoint: "mainVert",
                 buffers: 
                 [
@@ -244,7 +299,7 @@ export default class Scene implements Types.IApplicationLayer
             },
             fragment: 
             {
-                module: cSimpleSquareShader,
+                module: cBasicShaderModule,
                 entryPoint: "mainFrag",
                 targets: 
                 [
@@ -266,7 +321,7 @@ export default class Scene implements Types.IApplicationLayer
             }
         });
 
-        AssetManager.SubmitPipeline(cSimpleSquarePipeline);
+        AssetManager.SubmitPipeline(cSimpleSquarePipeline, Types.PipelineAssets.SimpleSquareRenderPipeline);
     }
 
     private mCamera : PerspectiveCamera;

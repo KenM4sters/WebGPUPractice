@@ -54,20 +54,24 @@ export namespace Types
     export enum BindGroupAssets 
     {
         CameraGroup = 0,
-        BasicMaterialGroup = 1,
-        TransformGroup = 2
+        PlayerMaterialBindGroup = 1,
+        PlayerTransformBindGroup = 2,
+        PlatformMaterialBindGroup = 3,
+        PlatformTransformBindGroup = 4,
     };
 
     export enum ShaderAssets 
     {
-        BasicMaterial = 0,
+        BasicShader = 0,
     };
 
     export enum UBOAssets 
     {
         CameraUBO = 0,
-        BasicMaterialUBO = 1,
-        TransformUBO = 2
+        PlayerMaterialUBO = 1,
+        PlayerTransformUBO = 2,
+        PlatformMaterialUBO = 3,
+        PlatformTransformUBO = 4,
     };
 
     export enum TextureAssets 
@@ -79,7 +83,7 @@ export namespace Types
 
     export enum PipelineAssets 
     {
-        BasicSpritePipeline = 0,
+        SimpleSquareRenderPipeline = 0,
     };
 
 };

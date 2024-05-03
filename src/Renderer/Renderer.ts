@@ -27,22 +27,6 @@ export default class Renderer implements Types.IApplicationLayer
             format: canvasFormat,
             alphaMode: "premultiplied"
         });
-
-        // // Render Pass Configuration.
-        // //
-        // let depthTextureView: GPUTextureView;
-        // let colorTextureView: GPUTextureView;
-
-        // const depthTextureDesc: GPUTextureDescriptor = {
-        //     size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
-        //     format: "depth24plus",
-        //     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-        // };
-
-        // // Set Target Texture for the render pass.
-        // colorTextureView = this.mContext.getCurrentTexture().createView();
-        // depthTextureView = this.mDevice.mGPU.createTexture(depthTextureDesc).createView();
-
     }
 
     public Draw(): void {
@@ -80,7 +64,6 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Begin render pass
         const encoder = this.mDevice.mGPU.createCommandEncoder();
-
         const pass = encoder.beginRenderPass(this.mRenderPass.Desc);
 
         // Run each Render System.
