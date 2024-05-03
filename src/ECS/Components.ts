@@ -43,9 +43,11 @@ export class MaterialComponent extends Component
 
 export class SquareGeometryComponent extends Component 
 {
-    constructor(label : string, device : GPUDevice) 
+    constructor(label : string, device : GPUDevice, instanceCount : number = 1) 
     {
         super(label);
+
+        this.mInstanceCount = instanceCount;
 
         const vertices : Float32Array = Primitives.SQUARE_VERTICES;
         const bufferLayout = new BufferLayout([
@@ -66,6 +68,7 @@ export class SquareGeometryComponent extends Component
 
     public readonly mData : Types.IPrimitivePayload;
     public readonly mGPUBuffer : GPUBuffer;
+    public readonly mInstanceCount : number;
 }
 
 
@@ -83,3 +86,26 @@ export class TransformComponent extends Component
     public mScale : glm.vec3 = glm.vec3.fromValues(1.0, 1.0, 1.0);
     public mModelMatrix : glm.mat4 = glm.mat4.create();
 }
+
+export class InstanceTransformComponent extends Component 
+{
+    constructor(label : string, transformMatrices : glm.mat4[]) 
+    {
+        super(label);
+        this.mTransformMatrices = transformMatrices;
+    }
+
+    public readonly mTransformMatrices : glm.mat4[] = [];
+}
+
+
+export abstract class SceneComponent 
+{
+    constructor() 
+    {   
+
+    }   
+    
+    public abstract Prepare(device : GPUDevice) : void;
+    public abstract LoadAndGenerateAssets(device : GPUDevice) : void;
+};

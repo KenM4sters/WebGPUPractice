@@ -10,6 +10,7 @@ export default class Renderer implements Types.IApplicationLayer
     constructor(d: Device) {
 
         this.mDevice = d;
+        
         this.mSpriteSystem = new SpriteRenderer(this.mDevice.mGPU);
 
         // Canvas

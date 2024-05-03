@@ -2,12 +2,12 @@ import * as glm from "gl-matrix";
 import { Utils } from "../Utils";
 import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
 import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
-import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
+import { CameraComponent, MaterialComponent, SceneComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
 import Input from "./Input";
 import { Types } from "../Types";
 import Entity from "../ECS/Entity";
 import AssetManager from "../AssetManager";
-
+import Level from "./Level";
 
 export default class Scene implements Types.IApplicationLayer
 {
@@ -16,6 +16,9 @@ export default class Scene implements Types.IApplicationLayer
         this.mCamera = new PerspectiveCamera(glm.vec3.fromValues(0.0, 0.0, 10.0), Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight);
 
         this.PrepareScene(device);
+
+        const level = new Level(device);
+        this.mSceneComponents.push(level);
 
         this.LoadAndGenerateAssets(device);
     }
@@ -43,34 +46,51 @@ export default class Scene implements Types.IApplicationLayer
 
     private PrepareScene(device : GPUDevice) : void 
     {
-        // Global
+        // Camera
         //
-        // let camera = new CameraComponent(this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
-        // let simpleSquare = new SquareGeometryComponent(device);
+        let camera = new CameraComponent("Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
+        AssetManager.SubmitComponent(camera, Types.ComponentAssets.CameraComponent);
         
         // Player
         //
         let playerTransform = new TransformComponent("Player_Transform_Component");
         let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader);
-        let playerCamera = new CameraComponent("Player_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
         let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
-        
+        AssetManager.SubmitComponent(playerTransform, Types.ComponentAssets.PlayerTransformComponent);
+        AssetManager.SubmitComponent(playerMat, Types.ComponentAssets.PlayerMaterialComponent);
+        AssetManager.SubmitComponent(playerSimpleSquare, Types.ComponentAssets.PlayerGeometryComponent);
+
         playerMat.mAlbedo = glm.vec3.fromValues(1.0, 0.2, 0.1);
         
-        let playerEntity = new Entity([playerSimpleSquare, playerTransform, playerMat, playerCamera], "Player");
+        let playerEntity = new Entity([
+            Types.ComponentAssets.PlayerGeometryComponent, 
+            Types.ComponentAssets.PlayerTransformComponent, 
+            Types.ComponentAssets.PlayerMaterialComponent, 
+            Types.ComponentAssets.CameraComponent
+        ], "Player");
+
         AssetManager.SubmitEntity(playerEntity, Types.EntityAssets.Player);
 
         // Platform
         //
         let platformTransform = new TransformComponent("Platform_Transform_Component");
         let platformMat = new MaterialComponent("Platform_Material_Component", Types.ShaderAssets.BasicShader);
-        let platformCamera = new CameraComponent("Platform_Camera_Component", this.mCamera.GetProjectionMatrix(), this.mCamera.GetViewMatrix(), this.mCamera.position);
         let platformSimpleSquare = new SquareGeometryComponent("Platform_Geometry_Component", device);
+        AssetManager.SubmitComponent(platformTransform, Types.ComponentAssets.PlatformInstanceTransformComponent);
+        AssetManager.SubmitComponent(platformMat, Types.ComponentAssets.PlatformMaterialComponent);
+        AssetManager.SubmitComponent(platformSimpleSquare, Types.ComponentAssets.PlatformGeometryComponent);
 
         glm.mat4.translate(platformTransform.mModelMatrix, platformTransform.mModelMatrix, glm.vec3.fromValues(1.5, 0.0, 0.0));
         platformMat.mAlbedo = glm.vec3.fromValues(0.2, 0.5, 1.0);
 
-        let platformEntity = new Entity([platformSimpleSquare, platformTransform, platformMat, platformCamera], "Platform");
+
+        let platformEntity = new Entity([
+            Types.ComponentAssets.PlatformGeometryComponent, 
+            Types.ComponentAssets.PlatformInstanceTransformComponent, 
+            Types.ComponentAssets.PlatformMaterialComponent, 
+            Types.ComponentAssets.CameraComponent
+        ], "Platform");
+
         AssetManager.SubmitEntity(platformEntity, Types.EntityAssets.Platform);
 
     }
@@ -325,4 +345,5 @@ export default class Scene implements Types.IApplicationLayer
     }
 
     private mCamera : PerspectiveCamera;
+    private mSceneComponents : SceneComponent[] = [];
 };

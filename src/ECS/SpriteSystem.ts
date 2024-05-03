@@ -14,14 +14,14 @@ export class SpriteRenderer extends System
     public CollectEntites(): void {
         for(const e of AssetManager.GetAllEntities()) 
         {
-            if(e.GetComponent(`${e.mLabel + `_Geometry_Component`}`)) this.mEntities.push(e);
+            if(e.GetComponent(`${e.mLabel + `_Transform_Component`}`)) this.mEntities.push(e);
             else continue;
         }                  
     }
 
     public UpdateState() : void 
     {
-        const camera = this.mEntities[0].GetComponent(`${this.mEntities[0].mLabel + `_Camera_Component`}`) as CameraComponent | undefined;
+        const camera = this.mEntities[0].GetComponent(`Camera_Component`) as CameraComponent | undefined;
         if(!camera) throw new Error("Entity sumbitted to SpriteRenderer does not contain a Camera Component");
 
         this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO), 0, new Float32Array(camera.mProjectionMatrix));   
@@ -72,7 +72,7 @@ export class SpriteRenderer extends System
             if(!geometry) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Geometry Component"); continue; }  
 
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
-            pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride());            
+            pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            
         };
     }
 };

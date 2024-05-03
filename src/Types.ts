@@ -49,13 +49,28 @@ export namespace Types
     {
         Player = 0,
         Platform = 1,
-    }
+    };
+
+    export enum ComponentAssets
+    {
+        CameraComponent = 0,
+
+        PlayerMaterialComponent = 1,
+        PlayerTransformComponent = 2,
+        PlayerGeometryComponent = 3,
+
+        PlatformMaterialComponent = 4,
+        PlatformInstanceTransformComponent = 5,
+        PlatformGeometryComponent = 6,
+    };
 
     export enum BindGroupAssets 
     {
         CameraGroup = 0,
+
         PlayerMaterialBindGroup = 1,
         PlayerTransformBindGroup = 2,
+
         PlatformMaterialBindGroup = 3,
         PlatformTransformBindGroup = 4,
     };
@@ -68,8 +83,10 @@ export namespace Types
     export enum UBOAssets 
     {
         CameraUBO = 0,
+
         PlayerMaterialUBO = 1,
         PlayerTransformUBO = 2,
+
         PlatformMaterialUBO = 3,
         PlatformTransformUBO = 4,
     };

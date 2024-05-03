@@ -1,20 +1,24 @@
+import AssetManager from "../AssetManager";
+import { Types } from "../Types";
 import { Component } from "./Components";
 
 export default class Entity 
 {
-    constructor(components : Component[], label : string = "EntityWithNoName") 
+    constructor(components : Types.ComponentAssets[], label : string = "EntityWithNoName") 
     { 
         for(const a of components) 
         {
-            this.mComponents[a.mLabel] = a;
+            const cComponent = AssetManager.GetComponent(a);
+            if(!cComponent) continue;
+            this.mComponentIndexes[cComponent.mLabel] = a;
         }  
         this.mLabel = label;
     };
 
     GetComponent<T extends Component>(componentName: string): T | undefined {
-        return this.mComponents[componentName] as T | undefined;
+        return AssetManager.GetComponent(this.mComponentIndexes[componentName]) as T | undefined;
     }
 
-    private readonly mComponents : Record<string, Component> = {};
+    private readonly mComponentIndexes : Record<string, Types.ComponentAssets> = {};
     public readonly mLabel : string;
 };
