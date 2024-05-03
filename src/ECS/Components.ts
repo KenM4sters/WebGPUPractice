@@ -89,13 +89,13 @@ export class TransformComponent extends Component
 
 export class InstanceTransformComponent extends Component 
 {
-    constructor(label : string, transformMatrices : glm.mat4[]) 
+    constructor(label : string, transformMatrices : Float32Array) 
     {
         super(label);
         this.mTransformMatrices = transformMatrices;
     }
 
-    public readonly mTransformMatrices : glm.mat4[] = [];
+    public readonly mTransformMatrices : Float32Array;
 }
 
 

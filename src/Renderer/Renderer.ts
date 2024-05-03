@@ -1,4 +1,5 @@
 import Device from "../Device";
+import BatchSystem from "../ECS/BatchSystem";
 import { SpriteRenderer } from "../ECS/SpriteSystem";
 import { Types } from "../Types";
 import { Utils } from "../Utils";
@@ -12,6 +13,7 @@ export default class Renderer implements Types.IApplicationLayer
         this.mDevice = d;
         
         this.mSpriteSystem = new SpriteRenderer(this.mDevice.mGPU);
+        this.mBatchSystem = new BatchSystem(this.mDevice.mGPU);
 
         // Canvas
         const canvas = document.querySelector("canvas") as HTMLCanvasElement;
@@ -62,6 +64,7 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Update Buffers for each Render System.
         this.mSpriteSystem.UpdateState();
+        this.mBatchSystem.UpdateState();
 
         // Begin render pass
         const encoder = this.mDevice.mGPU.createCommandEncoder();
@@ -69,6 +72,7 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Run each Render System.
         this.mSpriteSystem.Run(pass);
+        this.mBatchSystem.Run(pass);
 
         // End render pass
         pass.end();
@@ -123,5 +127,6 @@ export default class Renderer implements Types.IApplicationLayer
     private mContext : GPUCanvasContext;
     private mDevice : Device;
     private mSpriteSystem : SpriteRenderer;
+    private mBatchSystem : BatchSystem;
     private mRenderPass !: Types.IRenderPass;
 }

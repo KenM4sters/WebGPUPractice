@@ -61,6 +61,7 @@ export default class Scene implements Types.IApplicationLayer
         AssetManager.SubmitComponent(playerSimpleSquare, Types.ComponentAssets.PlayerGeometryComponent);
 
         playerMat.mAlbedo = glm.vec3.fromValues(1.0, 0.2, 0.1);
+        glm.mat4.scale(playerTransform.mModelMatrix, playerTransform.mModelMatrix, glm.vec3.fromValues(0.5, 0.5, 1.0));
         
         let playerEntity = new Entity([
             Types.ComponentAssets.PlayerGeometryComponent, 

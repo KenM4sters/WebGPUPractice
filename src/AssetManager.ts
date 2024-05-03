@@ -7,13 +7,14 @@ export default class AssetManager
     private constructor() {}
 
     // Submit asset to the appropriate container.
-    public static SubmitShader(s : GPUShaderModule, assetIndex : Types.ShaderAssets)            : void { this.mShaders[assetIndex] = s;}
-    public static SubmitPipeline(p : GPURenderPipeline, assetIndex : Types.PipelineAssets)      : void { this.mPipelines[assetIndex] = p; }
-    public static SubmitUBO(b : GPUBuffer, assetIndex : Types.UBOAssets)                        : void { this.mUBOs[assetIndex] = b; }
-    public static SubmitTexture(t : GPUTexture, assetIndex : Types.TextureAssets)               : void { this.mTextures[assetIndex] = t; }
-    public static SubmitBindGroup(b : GPUBindGroup, assetIndex : Types.BindGroupAssets)         : void { this.mBindGroups[assetIndex] = b; }
-    public static SubmitEntity(e : Entity, assetIndex : Types.EntityAssets)                     : void { this.mEntities[assetIndex] = e; }
-    public static SubmitComponent(c : Component, assetIndex : Types.ComponentAssets)            : void { this.mComponents[assetIndex] = c; }
+    public static SubmitShader(s : GPUShaderModule, assetIndex : Types.ShaderAssets)                    : void { this.mShaders[assetIndex] = s;}
+    public static SubmitPipeline(p : GPURenderPipeline, assetIndex : Types.PipelineAssets)              : void { this.mPipelines[assetIndex] = p; }
+    public static SubmitUBO(b : GPUBuffer, assetIndex : Types.UBOAssets)                                : void { this.mUBOs[assetIndex] = b; }
+    public static SubmitTexture(t : GPUTexture, assetIndex : Types.TextureAssets)                       : void { this.mTextures[assetIndex] = t; }
+    public static SubmitBindGroup(b : GPUBindGroup, assetIndex : Types.BindGroupAssets)                 : void { this.mBindGroups[assetIndex] = b; }
+    public static SubmitBindGroupLayout(bl : GPUBindGroupLayout, assetIndex : Types.BindGroupAssets)    : void { this.mBindGroupLayouts[assetIndex] = bl; }
+    public static SubmitEntity(e : Entity, assetIndex : Types.EntityAssets)                             : void { this.mEntities[assetIndex] = e; }
+    public static SubmitComponent(c : Component, assetIndex : Types.ComponentAssets)                    : void { this.mComponents[assetIndex] = c; }
 
     // Get by index.
     public static GetShader(assetIndex : Types.ShaderAssets)        : GPUShaderModule { return this.mShaders[assetIndex]; }
@@ -36,6 +37,8 @@ export default class AssetManager
 
     private static mBindGroups : GPUBindGroup[] = [];
 
+    private static mBindGroupLayouts : GPUBindGroupLayout[] = [];
+
     private static mUBOs : GPUBuffer[] = [];
 
     private static mShaders : GPUShaderModule[] = [];
@@ -45,5 +48,6 @@ export default class AssetManager
     private static mEntities : Entity[] = [];
 
     private static mComponents : Component[] = [];
+    
 
 };
