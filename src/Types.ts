@@ -3,13 +3,18 @@ import { BufferLayout } from "./Core/Buffer";
 export namespace Types 
 {            
     //----------------------------------------------------------------
-    // Interfaces.
+    // General Purpose.
     //----------------------------------------------------------------  
 
     export interface Ref<T>
     {
         val : T;
-    };
+    }; 
+
+    //----------------------------------------------------------------
+    // Renderer.
+    //----------------------------------------------------------------  
+
     
     export interface IApplicationLayer 
     {
@@ -35,21 +40,20 @@ export namespace Types
         Albedo : GPUBuffer
     };
 
-
-    //----------------------------------------------------------------
-    // Enumerations.
-    //----------------------------------------------------------------
-    
     export enum EDataType 
     {
         FLOAT, INT
     };
 
+    //----------------------------------------------------------------
+    // Asset Types.
+    //----------------------------------------------------------------
+    
+
     export enum EntityAssets
     {
         Player = 0,
-        Platform = 1,
-        Level = 2,
+        Level = 1,
     };
 
     export enum ComponentAssets
@@ -59,14 +63,13 @@ export namespace Types
         PlayerMaterialComponent = 1,
         PlayerTransformComponent = 2,
         PlayerGeometryComponent = 3,
+        PlayerSpriteComponent = 4,
+        PlayerPhysicsComponent = 5,
 
-        PlatformMaterialComponent = 4,
-        PlatformInstanceTransformComponent = 5,
-        PlatformGeometryComponent = 6,
-
-        LevelMaterialComponent = 7,
-        LevelInstanceTransformComponent = 8,
-        LevelGeometryComponent = 9,
+        LevelMaterialComponent = 6,
+        LevelInstanceTransformComponent = 7,
+        LevelGeometryComponent = 8,
+        LevelSpriteComponenet = 9,
     };
 
     export enum BindGroupAssets 
@@ -76,11 +79,8 @@ export namespace Types
         PlayerMaterialBindGroup = 1,
         PlayerTransformBindGroup = 2,
 
-        PlatformMaterialBindGroup = 3,
-        PlatformTransformBindGroup = 4,
-
-        LevelMaterialBindGroup = 5,
-        LevelInstanceTransformBindGroup = 6,
+        LevelMaterialBindGroup = 3,
+        LevelInstanceTransformBindGroup = 4,
     };
 
     export enum BindGroupLayoutAssets 
@@ -104,11 +104,8 @@ export namespace Types
         PlayerMaterialUBO = 1,
         PlayerTransformUBO = 2,
 
-        PlatformMaterialUBO = 3,
-        PlatformTransformUBO = 4,
-
-        LevelMaterialUBO = 5,
-        LevelInstanceTransformUBO = 6,
+        LevelMaterialUBO = 3,
+        LevelInstanceTransformUBO = 4,
     };
 
     export enum TextureAssets 

@@ -89,13 +89,42 @@ export class TransformComponent extends Component
 
 export class InstanceTransformComponent extends Component 
 {
-    constructor(label : string, transformMatrices : Float32Array) 
+    constructor(label : string, transformMatrices : Float32Array, positions : glm.vec3[], sizes: glm.vec3[]) 
     {
         super(label);
         this.mTransformMatrices = transformMatrices;
+        this.mPositions = positions;
+        this.mSizes = sizes;
     }
 
     public readonly mTransformMatrices : Float32Array;
+    public readonly mPositions : glm.vec3[] = [];
+    public readonly mSizes : glm.vec3[] = [];
+}
+
+export class SpriteComponent extends Component 
+{
+    constructor(label : string, position : glm.vec3, size : glm.vec3) 
+    {
+        super(label);
+        this.mPosition = position;
+        this.mSize = size;
+    }
+
+    public readonly mPosition : glm.vec3 = glm.vec3.create();
+    public readonly mSize : glm.vec3 = glm.vec3.fromValues(100.0, 100.0, 1.0);
+}   
+
+export class PhysicsComponent extends Component 
+{
+    constructor(label : string) 
+    {
+        super(label);
+    }
+
+    public readonly mVelocity : glm.vec3 = glm.vec3.create();
+    public readonly mAcceleration : glm.vec3 = glm.vec3.create();
+    public readonly mMass : number = 1.0;
 }
 
 

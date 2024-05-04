@@ -1,6 +1,7 @@
 import Device from "../Device";
 import BatchSystem from "../ECS/BatchSystem";
-import { SpriteRenderer } from "../ECS/SpriteSystem";
+import { SimpleSystem } from "../ECS/SimpleSystem";
+import { System } from "../ECS/Systems";
 import { Types } from "../Types";
 import { Utils } from "../Utils";
 
@@ -11,9 +12,6 @@ export default class Renderer implements Types.IApplicationLayer
     constructor(d: Device) {
 
         this.mDevice = d;
-        
-        this.mSpriteSystem = new SpriteRenderer(this.mDevice.mGPU);
-        this.mBatchSystem = new BatchSystem(this.mDevice.mGPU);
 
         // Canvas
         const canvas = document.querySelector("canvas") as HTMLCanvasElement;
@@ -30,10 +28,21 @@ export default class Renderer implements Types.IApplicationLayer
             format: canvasFormat,
             alphaMode: "premultiplied"
         });
+
+        // Entity Component Systems.
+        //
+        const cSimpleSystem = new SimpleSystem(this.mDevice.mGPU);
+        const cBatchSystem = new BatchSystem(this.mDevice.mGPU);
+
+        this.mSystems.push(cSimpleSystem);
+        this.mSystems.push(cBatchSystem);
+
     }
 
     public Draw(): void {
 
+        // Set Color and Depth Texture targets for the render pass.
+        //
         const depthTextureDesc: GPUTextureDescriptor = {
             size: [Utils.Sizes.mCanvasWidth, Utils.Sizes.mCanvasHeight],
             format: "depth24plus",
@@ -62,26 +71,38 @@ export default class Renderer implements Types.IApplicationLayer
             }
         }
 
-        // Update Buffers for each Render System.
-        this.mSpriteSystem.UpdateState();
-        this.mBatchSystem.UpdateState();
+        // Update Buffers (In most cases Uniform Buffers) for each Render System.
+        //
+        for(const sys of this.mSystems) 
+        {
+            sys.UpdateBuffers();
+        }
 
-        // Begin render pass
+        // Begin the render pass (no buffers can be modified form this point on in the current pass!).
+        //
         const encoder = this.mDevice.mGPU.createCommandEncoder();
         const pass = encoder.beginRenderPass(this.mRenderPass.Desc);
 
         // Run each Render System.
-        this.mSpriteSystem.Run(pass);
-        this.mBatchSystem.Run(pass);
+        //
+        for(const sys of this.mSystems) 
+        {
+            sys.Run(pass);
+        }
 
         // End render pass
+        //
         pass.end();
 
         // Submit the command encoder
+        //
         this.mDevice.mGPU.queue.submit([encoder.finish()]);
     }
 
-    public ListenToUserInput(): void { }
+    public ListenToUserInput(): void 
+    { 
+        
+    }
 
     public OnCanvasResize(w: number, h: number): void {
 
@@ -126,7 +147,6 @@ export default class Renderer implements Types.IApplicationLayer
 
     private mContext : GPUCanvasContext;
     private mDevice : Device;
-    private mSpriteSystem : SpriteRenderer;
-    private mBatchSystem : BatchSystem;
     private mRenderPass !: Types.IRenderPass;
+    private readonly mSystems : System[] = [];
 }

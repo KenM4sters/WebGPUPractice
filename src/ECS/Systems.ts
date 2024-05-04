@@ -11,6 +11,8 @@ export abstract class System
 
     public abstract CollectEntites() : void;
 
+    public abstract UpdateBuffers() : void;
+
     public readonly mEntities : Entity[] = [];
     public readonly mDevice : GPUDevice;
 };

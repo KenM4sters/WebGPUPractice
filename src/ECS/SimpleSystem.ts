@@ -3,7 +3,7 @@ import { Types } from "../Types";
 import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "./Components";
 import { System } from "./Systems";
 
-export class SpriteRenderer extends System 
+export class SimpleSystem extends System 
 {
     constructor(device : GPUDevice) 
     {
@@ -19,10 +19,10 @@ export class SpriteRenderer extends System
         }                  
     }
 
-    public UpdateState() : void 
+    public UpdateBuffers() : void 
     {
         const camera = this.mEntities[0].GetComponent(`Camera_Component`) as CameraComponent | undefined;
-        if(!camera) throw new Error("Entity sumbitted to SpriteRenderer does not contain a Camera Component");
+        if(!camera) throw new Error("Entity sumbitted to SimpleSystem does not contain a Camera Component");
 
         this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO), 0, new Float32Array(camera.mProjectionMatrix));   
         this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.CameraUBO), 16*4, new Float32Array(camera.mViewMatrix));
@@ -31,20 +31,16 @@ export class SpriteRenderer extends System
         for(const e of this.mEntities) 
         {
             const transform = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
-            if(!transform) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Transform Component"); continue; }
+            if(!transform) {console.warn("Entity sumbitted to SimpleSystem does not contain a Transform Component"); continue; }
             
             const material = e.GetComponent(`${e.mLabel + `_Material_Component`}`) as MaterialComponent | undefined;
-            if(!material) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Material Component"); continue; }
+            if(!material) {console.warn("Entity sumbitted to SimpleSystem does not contain a Material Component"); continue; }
             
             switch(e.mLabel) 
             {
                 case "Player": 
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerMaterialUBO), 0, new Float32Array(material.mAlbedo as number[]));   
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerTransformUBO), 0, new Float32Array(transform.mModelMatrix));
-                    break;
-                case "Platform":
-                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlatformMaterialUBO), 0, new Float32Array(material.mAlbedo as number[]));   
-                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlatformTransformUBO), 0, new Float32Array(transform.mModelMatrix));
                     break;
             }
         }
@@ -62,14 +58,10 @@ export class SpriteRenderer extends System
                     pass.setBindGroup(1, AssetManager.GetBindGroup(Types.BindGroupAssets.PlayerMaterialBindGroup));
                     pass.setBindGroup(2, AssetManager.GetBindGroup(Types.BindGroupAssets.PlayerTransformBindGroup));
                     break;
-                case "Platform":
-                    pass.setBindGroup(1, AssetManager.GetBindGroup(Types.BindGroupAssets.PlatformMaterialBindGroup));
-                    pass.setBindGroup(2, AssetManager.GetBindGroup(Types.BindGroupAssets.PlatformTransformBindGroup));
-                    break;
             }
 
             const geometry = e.GetComponent(`${e.mLabel + `_Geometry_Component`}`) as SquareGeometryComponent | undefined;
-            if(!geometry) {console.warn("Entity sumbitted to SpriteRenderer does not contain a Geometry Component"); continue; }  
+            if(!geometry) {console.warn("Entity sumbitted to SimpleSystem does not contain a Geometry Component"); continue; }  
 
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
             pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            

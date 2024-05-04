@@ -20,7 +20,7 @@ export default class BatchSystem extends System
         }
     }
 
-    public UpdateState() : void 
+    public UpdateBuffers() : void 
     {
         
         const camera = this.mEntities[0].GetComponent(`Camera_Component`) as CameraComponent | undefined;

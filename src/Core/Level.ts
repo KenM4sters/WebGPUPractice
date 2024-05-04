@@ -5,6 +5,7 @@ import Entity from "../ECS/Entity";
 import { Types } from "../Types";
 
 import levelShaderSrc from "../../Shaders/Level.wgsl?raw";
+import { Utils } from "../Utils";
 
 export default class Level extends SceneComponent
 {
@@ -20,39 +21,46 @@ export default class Level extends SceneComponent
 
     public Prepare(device : GPUDevice): void 
     {
-
         // Instance Transform Array
         //
         const instanceTransformComponent : Float32Array = new Float32Array(16*this.mInstanceCount);
+        const w = Utils.Sizes.mCanvasWidth;
+        const h = Utils.Sizes.mCanvasHeight;
+        const half_w = w/2.0;
+        const half_h = h/2.0; 
 
-        const translationArray : glm.vec3[] = 
+        const positions : glm.vec3[] = 
         [
-            glm.vec3.fromValues(0.0, -6.0, 0.0),
-            glm.vec3.fromValues(-1.5, -2.0, 0.0),
-            glm.vec3.fromValues(-1.0, 4.0, 0.0),
-            glm.vec3.fromValues(-2.0, 8.0, 0.0),
-            glm.vec3.fromValues(1.5, -2.0, 0.0),
-            glm.vec3.fromValues(1.0, 4.0, 0.0),
-            glm.vec3.fromValues(2.0, 8.0, 0.0),
+            glm.vec3.fromValues(half_w, half_h + 100.0, 0.0),
+
+            glm.vec3.fromValues(half_w + 300.0, half_h + 300.0, 0.0),
+            glm.vec3.fromValues(half_w - 300.0, half_h + 300.0, 0.0),
+            glm.vec3.fromValues(half_w + 300.0, half_h - 300.0, 0.0),
+            glm.vec3.fromValues(half_w - 300.0, half_h - 300.0, 0.0),
+
+            glm.vec3.fromValues(half_w - 500.0, half_h, 0.0),
+            glm.vec3.fromValues(half_w + 500.0, half_h, 0.0),
         ];
 
-        const scaleArray : glm.vec3[] = 
+        const sizes : glm.vec3[] = 
         [
-            glm.vec3.fromValues(3.0, 0.4, 0.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
-            glm.vec3.fromValues(3.0, 0.4, 1.0),
+            glm.vec3.fromValues(100.0, 10, 1.0),
+
+            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(100.0, 10, 1.0),
+
+            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(100.0, 10, 1.0),
         ];
 
         let offset = 0;
         for(let i = 0; i < this.mInstanceCount; i++) 
         {
             let identity = glm.mat4.create();
-            glm.mat4.scale(identity, identity, scaleArray[i]);
-            glm.mat4.translate(identity, identity, translationArray[i]);
+            glm.mat4.translate(identity, identity, positions[i]);
+            glm.mat4.scale(identity, identity, sizes[i]);
 
             instanceTransformComponent.set(identity, offset);
             offset += 16;
@@ -70,7 +78,7 @@ export default class Level extends SceneComponent
             Types.ComponentAssets.LevelMaterialComponent
         );
         AssetManager.SubmitComponent(
-            new InstanceTransformComponent("Level_Instance_Transform_Component", instanceTransformComponent),
+            new InstanceTransformComponent("Level_Instance_Transform_Component", instanceTransformComponent, positions, sizes),
             Types.ComponentAssets.LevelInstanceTransformComponent
         );
         AssetManager.SubmitComponent(
