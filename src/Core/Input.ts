@@ -11,7 +11,7 @@ const keys : {[key: string] : boolean } =
     "d": false,
     "q": false,
     "e": false,
-    "space": false,
+    " ": false,
     "ArrowLeft": false,
     "ArrowRight": false,
     "ArrowUp": false,
@@ -26,12 +26,13 @@ export default class Input
     {
         window.addEventListener("keydown", (event : KeyboardEvent) => 
         {
-            keys[event.key] = true;
+            keys[event.key] = true; 
         });
 
         window.addEventListener("keyup", (event : KeyboardEvent) => 
         {
             keys[event.key] = false;
+            
         });
     }
 
@@ -39,4 +40,20 @@ export default class Input
     {
         return keys[key];
     }
+
+    public static CallSingleKeyPress(key : string, callback: () => void) : void 
+    {
+        window.addEventListener("keydown", (event : KeyboardEvent) => 
+        {
+            if(event.key == key)                 
+            {                                
+                if(keys[event.key]) 
+                {
+                    callback();
+                    keys[event.key] = false;
+                }
+            }
+        });
+    }
+
 };

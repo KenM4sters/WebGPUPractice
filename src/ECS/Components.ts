@@ -106,7 +106,7 @@ export class SpriteComponent extends Component
         this.mSize = size;
     }
 
-    public readonly mPosition : glm.vec3[] = [];
+    public mPosition : glm.vec3[] = [];
     public readonly mSize : glm.vec3[] = [];
 }
 
@@ -122,9 +122,9 @@ export class PhysicsComponent extends Component
         this.mAcceleration = acceleration;
     }
 
-    public readonly mMass : number[];
-    public readonly mVelocity : glm.vec3[];
-    public readonly mAcceleration : glm.vec3[];
+    public mMass : number[];
+    public mVelocity : glm.vec3[];
+    public mAcceleration : glm.vec3[];
 }
 
 
