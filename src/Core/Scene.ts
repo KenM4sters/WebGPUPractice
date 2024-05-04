@@ -32,18 +32,6 @@ export default class Scene implements Types.IApplicationLayer
 
     public ListenToUserInput() : void 
     {   
-        const cPlayer = AssetManager.GetEntity(Types.EntityAssets.Player) as Entity;
-        let cTransforms = cPlayer.GetComponent(`${cPlayer.mLabel + `_Transform_Component`}`) as TransformComponent;
-        
-        if(Input.IsKeyPressed("w")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(0.0, -1.0*Utils.Time.GetDeltaTime()*10.0,     0.0));  
-        if(Input.IsKeyPressed("a")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(-1.0*Utils.Time.GetDeltaTime()*10.0, 0.0,     0.0));  
-        if(Input.IsKeyPressed("s")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(0.0, 1.0*Utils.Time.GetDeltaTime()*10.0,      0.0));  
-        if(Input.IsKeyPressed("d")) glm.mat4.translate(cTransforms.mModelMatrix, cTransforms.mModelMatrix, glm.vec3.fromValues(1.0*Utils.Time.GetDeltaTime()*10.0, 0.0,      0.0));
-
-        // if(Input.IsKeyPressed("ArrowUp")) this.mCamera.ProcessUserInput(CameraDirections.UP);
-        // if(Input.IsKeyPressed("ArrowLeft")) this.mCamera.ProcessUserInput(CameraDirections.LEFT);
-        // if(Input.IsKeyPressed("ArrowDown")) this.mCamera.ProcessUserInput(CameraDirections.DOWN);
-        // if(Input.IsKeyPressed("ArrowRight")) this.mCamera.ProcessUserInput(CameraDirections.RIGHT); 
     }
 
     public OnCanvasResize(w : number, h : number) : void

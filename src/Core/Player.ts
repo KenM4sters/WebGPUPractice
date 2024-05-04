@@ -1,6 +1,6 @@
 import * as glm from "gl-matrix";
 import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
-import { MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
+import { MaterialComponent, PhysicsComponent, SceneComponent, SpriteComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
 import { Types } from "../Types";
 import Entity from "../ECS/Entity";
 import AssetManager from "../AssetManager";
@@ -19,44 +19,45 @@ export default class Player extends SceneComponent
 
     public Prepare(device: GPUDevice): void 
     {
-        // 1. Initialize any properties required for the components of the Player.
+        // 1. Basic Player properties.
         //
         let playerPosition = glm.vec3.fromValues(Utils.Sizes.mCanvasWidth/2.0, Utils.Sizes.mCanvasHeight/2.0, 0.0);
         let playerSize = glm.vec3.fromValues(30.0, 30.0, 1.0);
         let playerColor = glm.vec3.fromValues(1.0, 0.7, 0.2);
+        let playerMass = [1.0];
+        let playerVelocity = [glm.vec3.fromValues(0.0, 0.0, 0.0)];
+        let playerAccelration = [glm.vec3.fromValues(0.0, 0.0, 0.0)];
+        let playerModelMatrix = glm.mat4.create();
+        let floatArray = new Float32Array(16);
+        floatArray.set(playerModelMatrix, 0);
 
-        // 2. Create components.
+        // 2. Components.
         //
-        let playerTransform = new TransformComponent("Player_Transform_Component");
-        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader);
         let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
-        let playerSpriteComponent = new SpriteComponent("Player_Sprite_Component", playerPosition, playerSize);
-
+        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader, playerColor);
+        let playerTransform = new TransformComponent("Player_Transform_Component", [playerModelMatrix], floatArray);
+        let playerSprite = new SpriteComponent("Player_Sprite_Component", [playerPosition], [playerSize]);
+        let playerPhysics = new PhysicsComponent("Player_Physics_Component", playerMass, playerVelocity, playerAccelration);
 
         // 3. Submit them to the Asset Manager so they're accessible to each System.
         //
-        AssetManager.SubmitComponent(playerTransform, Types.ComponentAssets.PlayerTransformComponent);
-        AssetManager.SubmitComponent(playerMat, Types.ComponentAssets.PlayerMaterialComponent);
         AssetManager.SubmitComponent(playerSimpleSquare, Types.ComponentAssets.PlayerGeometryComponent);
-        AssetManager.SubmitComponent(playerSpriteComponent, Types.ComponentAssets.PlayerSpriteComponent);
-
-
-        // 4. Scale and Translate the Transform Model Matrix to reflect the 
-        // The position and size of the player sprite (+ any material preferences).
-        //
-        playerMat.mAlbedo = playerColor;
-        glm.mat4.translate(playerTransform.mModelMatrix, playerTransform.mModelMatrix, playerPosition);
-        glm.mat4.scale(playerTransform.mModelMatrix, playerTransform.mModelMatrix, playerSize);
+        AssetManager.SubmitComponent(playerMat, Types.ComponentAssets.PlayerMaterialComponent);
+        AssetManager.SubmitComponent(playerTransform, Types.ComponentAssets.PlayerTransformComponent);
+        AssetManager.SubmitComponent(playerSprite, Types.ComponentAssets.PlayerSpriteComponent);
+        AssetManager.SubmitComponent(playerPhysics, Types.ComponentAssets.PlayerPhysicsComponent);
 
 
         // 5. Create the Entity from the Enumerations that hold the index at which the componenent
         // lies in the appropraite Asset Manager container when it was submitted.
         //
         let playerEntity = new Entity([
+            Types.ComponentAssets.CameraComponent,
             Types.ComponentAssets.PlayerGeometryComponent, 
-            Types.ComponentAssets.PlayerTransformComponent, 
             Types.ComponentAssets.PlayerMaterialComponent, 
-            Types.ComponentAssets.CameraComponent
+            Types.ComponentAssets.PlayerTransformComponent,
+            Types.ComponentAssets.PlayerSpriteComponent, 
+            Types.ComponentAssets.PlayerPhysicsComponent
         ], "Player");
 
 

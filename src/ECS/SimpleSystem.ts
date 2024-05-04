@@ -40,7 +40,8 @@ export class SimpleSystem extends System
             {
                 case "Player": 
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerMaterialUBO), 0, new Float32Array(material.mAlbedo as number[]));   
-                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerTransformUBO), 0, new Float32Array(transform.mModelMatrix));
+                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerTransformUBO), 0, transform.mFloatArray);
+                    
                     break;
             }
         }
@@ -66,5 +67,10 @@ export class SimpleSystem extends System
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
             pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            
         };
+    }
+
+    public ListenToUserInput(): void 
+    {
+            
     }
 };

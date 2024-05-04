@@ -1,6 +1,6 @@
 import * as glm from "gl-matrix"
 import AssetManager from "../AssetManager";
-import { InstanceTransformComponent, MaterialComponent, SceneComponent, SquareGeometryComponent } from "../ECS/Components";
+import { MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
 import Entity from "../ECS/Entity";
 import { Types } from "../Types";
 
@@ -21,9 +21,10 @@ export default class Level extends SceneComponent
 
     public Prepare(device : GPUDevice): void 
     {
-        // Instance Transform Array
+        // 1. We need a float32Array containing all the different floats that make up each transform matrix.
         //
-        const instanceTransformComponent : Float32Array = new Float32Array(16*this.mInstanceCount);
+        const floatArray : Float32Array = new Float32Array(16*this.mInstanceCount);
+        const matArray : glm.mat4[] = [];
         const w = Utils.Sizes.mCanvasWidth;
         const h = Utils.Sizes.mCanvasHeight;
         const half_w = w/2.0;
@@ -58,43 +59,46 @@ export default class Level extends SceneComponent
         let offset = 0;
         for(let i = 0; i < this.mInstanceCount; i++) 
         {
-            let identity = glm.mat4.create();
-            glm.mat4.translate(identity, identity, positions[i]);
-            glm.mat4.scale(identity, identity, sizes[i]);
+            let m = glm.mat4.create();
 
-            instanceTransformComponent.set(identity, offset);
-            offset += 16;
-        }        
+            // If you compute the translation after the scale, remember that the translation
+            // values will get scaled themselves by the scale transform. 
+            glm.mat4.translate(m, m, positions[i]);
+            glm.mat4.scale(m, m, sizes[i]);
+            matArray.push(m);
+            floatArray.set(m, offset);
+            offset += 16; // Remember to increment the offset by the size of a mat4x4<f32>.
+        }
+        
+        let levelColor = glm.vec3.fromValues(0.5, 0.0, 1.0);
 
-        // The scene submits a camera component before a level is instantiated, so we can just query
+        // 2. The scene submits a camera component before a level is instantiated, so we can just query
         // the asset manager for the camera component.
+        //
+        let levelGeometry = new SquareGeometryComponent("Level_Geometry_Component", device, this.mInstanceCount);
+        let levelMat = new MaterialComponent("Level_Material_Component", Types.ShaderAssets.LevelShader, levelColor);
+        let levelTransform = new TransformComponent("Level_Transform_Component", matArray, floatArray);
+        let levelSprite = new SpriteComponent("Level_Sprite_Component", positions, sizes);
 
-        let levelMat = new MaterialComponent("Level_Material_Component", Types.ShaderAssets.LevelShader);
+        AssetManager.SubmitComponent(levelGeometry, Types.ComponentAssets.LevelGeometryComponent);
+        AssetManager.SubmitComponent(levelMat, Types.ComponentAssets.LevelMaterialComponent);
+        AssetManager.SubmitComponent(levelTransform, Types.ComponentAssets.LevelTransformComponent);
+        AssetManager.SubmitComponent(levelSprite, Types.ComponentAssets.LevelSpriteComponenet);
 
-        levelMat.mAlbedo = glm.vec3.fromValues(0.5, 0.0, 1.0);
-
-        AssetManager.SubmitComponent(
-            levelMat,
-            Types.ComponentAssets.LevelMaterialComponent
-        );
-        AssetManager.SubmitComponent(
-            new InstanceTransformComponent("Level_Instance_Transform_Component", instanceTransformComponent, positions, sizes),
-            Types.ComponentAssets.LevelInstanceTransformComponent
-        );
-        AssetManager.SubmitComponent(
-            new SquareGeometryComponent("Level_Geometry_Component", device, this.mInstanceCount),
-            Types.ComponentAssets.LevelGeometryComponent
-        );
-
+        // 3. Create the level entity and submit it to the Asset Manager.
+        //
         const levelEntity = new Entity([
             Types.ComponentAssets.CameraComponent,
+            Types.ComponentAssets.LevelGeometryComponent,
             Types.ComponentAssets.LevelMaterialComponent,
-            Types.ComponentAssets.LevelInstanceTransformComponent,
-            Types.ComponentAssets.LevelGeometryComponent
+            Types.ComponentAssets.LevelTransformComponent,
+            Types.ComponentAssets.LevelSpriteComponenet
         ], "Level");
 
         AssetManager.SubmitEntity(levelEntity, Types.EntityAssets.Level);
     }
+
+    
 
     public LoadAndGenerateAssets(device : GPUDevice): void 
     {

@@ -1,5 +1,7 @@
 import Device from "../Device";
 import BatchSystem from "../ECS/BatchSystem";
+import CollisionSystem from "../ECS/CollisionSystem";
+import Physics from "../ECS/Physics";
 import { SimpleSystem } from "../ECS/SimpleSystem";
 import { System } from "../ECS/Systems";
 import { Types } from "../Types";
@@ -14,6 +16,7 @@ export default class Renderer implements Types.IApplicationLayer
         this.mDevice = d;
 
         // Canvas
+        //
         const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
         // Get the context so that we can query for its color texture and pass our scene texture.
@@ -21,6 +24,8 @@ export default class Renderer implements Types.IApplicationLayer
         if (!context) throw new Error("Failed to get WebGPU context from canvas!");
         this.mContext = context;
 
+        // You can set your own canvas format, but generally the "preferred" one that you can get
+        // from the gpu suffices. 
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
         this.mContext.configure({
@@ -33,9 +38,13 @@ export default class Renderer implements Types.IApplicationLayer
         //
         const cSimpleSystem = new SimpleSystem(this.mDevice.mGPU);
         const cBatchSystem = new BatchSystem(this.mDevice.mGPU);
+        const cCollisionSystem = new CollisionSystem(this.mDevice.mGPU);
+        const cPhysicsSystem = new Physics(this.mDevice.mGPU);
 
         this.mSystems.push(cSimpleSystem);
         this.mSystems.push(cBatchSystem);
+        this.mSystems.push(cCollisionSystem);
+        this.mSystems.push(cPhysicsSystem);
 
     }
 
@@ -101,7 +110,10 @@ export default class Renderer implements Types.IApplicationLayer
 
     public ListenToUserInput(): void 
     { 
-        
+        for(const sys of this.mSystems) 
+        {
+            sys.ListenToUserInput();
+        }
     }
 
     public OnCanvasResize(w: number, h: number): void {

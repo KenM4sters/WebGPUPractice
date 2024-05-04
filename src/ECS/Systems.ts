@@ -13,6 +13,8 @@ export abstract class System
 
     public abstract UpdateBuffers() : void;
 
+    public abstract ListenToUserInput() : void;
+
     public readonly mEntities : Entity[] = [];
     public readonly mDevice : GPUDevice;
 };

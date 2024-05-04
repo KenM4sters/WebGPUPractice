@@ -1,6 +1,6 @@
 import AssetManager from "../AssetManager";
 import { Types } from "../Types";
-import { CameraComponent, InstanceTransformComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "./Components";
+import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "./Components";
 import { System } from "./Systems";
 
 export default class BatchSystem extends System 
@@ -13,10 +13,14 @@ export default class BatchSystem extends System
 
     public CollectEntites(): void 
     {        
+
         for(const e of AssetManager.GetAllEntities()) 
         {
-            if(e.GetComponent(`${e.mLabel + `_Instance_Transform_Component`}`)) this.mEntities.push(e);
-            else continue;
+            const cTransformComponent = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
+            if(!cTransformComponent) continue;
+            else if(cTransformComponent.mModelMatrices.length <= 1) continue;
+            else this.mEntities.push(e);
+
         }
     }
 
@@ -32,7 +36,7 @@ export default class BatchSystem extends System
 
         for(const e of this.mEntities) 
         {
-            const transform = e.GetComponent(`${e.mLabel + `_Instance_Transform_Component`}`) as InstanceTransformComponent | undefined;
+            const transform = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
             if(!transform) {console.warn("Entity sumbitted to BatchSystem does not contain a Transform Component"); continue; }
             
             const material = e.GetComponent(`${e.mLabel + `_Material_Component`}`) as MaterialComponent | undefined;
@@ -45,9 +49,9 @@ export default class BatchSystem extends System
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(
                         Types.UBOAssets.LevelInstanceTransformUBO), 
                         0, 
-                        transform.mTransformMatrices.buffer, 
-                        transform.mTransformMatrices.byteOffset, 
-                        transform.mTransformMatrices.byteLength
+                        transform.mFloatArray.buffer, 
+                        transform.mFloatArray.byteOffset, 
+                        transform.mFloatArray.byteLength
                     );                    
                     break;
             }
@@ -75,5 +79,10 @@ export default class BatchSystem extends System
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
             pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            
         };
+    }
+
+    public ListenToUserInput(): void 
+    {
+        
     }
 }

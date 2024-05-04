@@ -67,7 +67,7 @@ export namespace Types
         PlayerPhysicsComponent = 5,
 
         LevelMaterialComponent = 6,
-        LevelInstanceTransformComponent = 7,
+        LevelTransformComponent = 7,
         LevelGeometryComponent = 8,
         LevelSpriteComponenet = 9,
     };

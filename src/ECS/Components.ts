@@ -75,56 +75,56 @@ export class SquareGeometryComponent extends Component
 
 export class TransformComponent extends Component 
 {
-    constructor(label : string, position : glm.vec3 = glm.vec3.create()) 
+    constructor(label : string, transformMats : glm.mat4[], floatArray ?: Float32Array) 
     {
         super(label);
-        this.mPosition = position;
-    }
 
-    public mPosition : glm.vec3;
-    public mRotation : glm.quat = glm.quat.create();
-    public mScale : glm.vec3 = glm.vec3.fromValues(1.0, 1.0, 1.0);
-    public mModelMatrix : glm.mat4 = glm.mat4.create();
+        this.mModelMatrices = transformMats;
+        if(floatArray) this.mFloatArray = floatArray;
+        else {
+            this.mFloatArray = new Float32Array(this.mModelMatrices.length * 16);
+            let offset = 0;
+            for(const mat of this.mModelMatrices) 
+            {
+                this.mFloatArray.set(mat, offset);
+                offset += 16;
+            }
+        }
+
+    }
+    public mModelMatrices : glm.mat4[];
+    public mFloatArray : Float32Array;
 }
 
-export class InstanceTransformComponent extends Component 
-{
-    constructor(label : string, transformMatrices : Float32Array, positions : glm.vec3[], sizes: glm.vec3[]) 
-    {
-        super(label);
-        this.mTransformMatrices = transformMatrices;
-        this.mPositions = positions;
-        this.mSizes = sizes;
-    }
-
-    public readonly mTransformMatrices : Float32Array;
-    public readonly mPositions : glm.vec3[] = [];
-    public readonly mSizes : glm.vec3[] = [];
-}
 
 export class SpriteComponent extends Component 
 {
-    constructor(label : string, position : glm.vec3, size : glm.vec3) 
+    constructor(label : string, position : glm.vec3[], size : glm.vec3[]) 
     {
         super(label);
         this.mPosition = position;
         this.mSize = size;
     }
 
-    public readonly mPosition : glm.vec3 = glm.vec3.create();
-    public readonly mSize : glm.vec3 = glm.vec3.fromValues(100.0, 100.0, 1.0);
-}   
+    public readonly mPosition : glm.vec3[] = [];
+    public readonly mSize : glm.vec3[] = [];
+}
 
 export class PhysicsComponent extends Component 
 {
-    constructor(label : string) 
+    constructor(label : string, mass : number[] = [1.0], 
+        velocity : glm.vec3[] = [glm.vec3.fromValues(0.0, 0.0, 0.0)], 
+        acceleration : glm.vec3[] = [glm.vec3.fromValues(0.0, 0.0, 0.0)]) 
     {
         super(label);
+        this.mMass = mass;
+        this.mVelocity = velocity;
+        this.mAcceleration = acceleration;
     }
 
-    public readonly mVelocity : glm.vec3 = glm.vec3.create();
-    public readonly mAcceleration : glm.vec3 = glm.vec3.create();
-    public readonly mMass : number = 1.0;
+    public readonly mMass : number[];
+    public readonly mVelocity : glm.vec3[];
+    public readonly mAcceleration : glm.vec3[];
 }
 
 

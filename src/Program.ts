@@ -4,6 +4,7 @@ import { Utils } from "./Utils";
 import Scene from "./Core/Scene";
 import { Types } from "./Types";
 import Input from "./Core/Input";
+import { Stats } from "stats.ts";
 
 export default class Program implements Types.IApplicationLayer
 {
@@ -18,16 +19,23 @@ export default class Program implements Types.IApplicationLayer
         
         // If no errors have been thrown, then the program will initialize itself.
         this.Init(gpu);
+
+        // Stats Window
+        //
+        this.mStatsUI = new Stats();
+        this.mStatsUI.showPanel(1);
+        document.body.appendChild(this.mStatsUI.dom);
     }
     
     public Run() : void 
     {        
-
+        this.mStatsUI.begin();
         Utils.Time.Run(); // Updates current time and time between frames (delta time).
 
         this.mRenderer.Draw(); // Initiates a render pass and runs each render system.
 
         this.ListenToUserInput(); // Calls each ListenToUserInput() method on each application layer.
+        this.mStatsUI.end();
 
         window.requestAnimationFrame(() => this.Run()); // Game Loop.
     }
@@ -62,4 +70,5 @@ export default class Program implements Types.IApplicationLayer
     private mDevice !: Device;
     private mRenderer !: Renderer;
     private mScene !: Scene;
+    private mStatsUI !: Stats;
 };
