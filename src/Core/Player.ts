@@ -1,6 +1,6 @@
 import * as glm from "gl-matrix";
 import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
-import { MaterialComponent, PhysicsComponent, SceneComponent, SpriteComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
+import { MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent } from "../ECS/Components";
 import { Types } from "../Types";
 import Entity from "../ECS/Entity";
 import AssetManager from "../AssetManager";
@@ -21,32 +21,46 @@ export default class Player extends SceneComponent
     {
         // 1. Basic Player properties.
         //
-        let playerPosition = glm.vec3.fromValues(Utils.Sizes.mCanvasWidth/2.0, Utils.Sizes.mCanvasHeight/2.0, 0.0);
+        let playerPosition = glm.vec3.fromValues((Utils.Sizes.mCanvasWidth/2.0), Utils.Sizes.mCanvasHeight/2.0, 0.0);
         let playerSize = glm.vec3.fromValues(30.0, 30.0, 1.0);
         let playerColor = glm.vec3.fromValues(1.0, 0.7, 0.2);
-        let playerMass = [1.0];
-        let playerVelocity = [glm.vec3.fromValues(0.0, 0.0, 0.0)];
-        let playerAccelration = [glm.vec3.fromValues(0.0, 0.0, 0.0)];
+        let playerMass = 1.0;
+        let playerVelocity = glm.vec3.fromValues(0.0, 0.0, 0.0);
+        let playerAccelration = glm.vec3.fromValues(0.0, 0.0, 0.0);
         let playerModelMatrix = glm.mat4.create();
         let floatArray = new Float32Array(16);
-        floatArray.set(playerModelMatrix, 0);
+        floatArray.set(playerModelMatrix, 0); 
+
+        const cSpriteConfig : Types.SpriteConfig = 
+        {
+            Label: "Player_Sprite_Component",
+            Position: playerPosition,
+            Size: playerSize,
+            Cells: [],
+            Physics: 
+            {
+                Mass: playerMass,
+                Velocity: playerVelocity,
+                Acceleration : playerAccelration
+            },
+            Transforms: 
+            {
+                ModelMatrix: playerModelMatrix,
+                FloatArray: floatArray
+            }
+        };
 
         // 2. Components.
         //
         let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
         let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader, playerColor);
-        let playerTransform = new TransformComponent("Player_Transform_Component", [playerModelMatrix], floatArray);
-        let playerSprite = new SpriteComponent("Player_Sprite_Component", [playerPosition], [playerSize]);
-        let playerPhysics = new PhysicsComponent("Player_Physics_Component", playerMass, playerVelocity, playerAccelration);
+        let playerSprite = new SpriteComponent(cSpriteConfig);
 
         // 3. Submit them to the Asset Manager so they're accessible to each System.
         //
         AssetManager.SubmitComponent(playerSimpleSquare, Types.ComponentAssets.PlayerGeometryComponent);
         AssetManager.SubmitComponent(playerMat, Types.ComponentAssets.PlayerMaterialComponent);
-        AssetManager.SubmitComponent(playerTransform, Types.ComponentAssets.PlayerTransformComponent);
         AssetManager.SubmitComponent(playerSprite, Types.ComponentAssets.PlayerSpriteComponent);
-        AssetManager.SubmitComponent(playerPhysics, Types.ComponentAssets.PlayerPhysicsComponent);
-
 
         // 5. Create the Entity from the Enumerations that hold the index at which the componenent
         // lies in the appropraite Asset Manager container when it was submitted.
@@ -55,11 +69,8 @@ export default class Player extends SceneComponent
             Types.ComponentAssets.CameraComponent,
             Types.ComponentAssets.PlayerGeometryComponent, 
             Types.ComponentAssets.PlayerMaterialComponent, 
-            Types.ComponentAssets.PlayerTransformComponent,
             Types.ComponentAssets.PlayerSpriteComponent, 
-            Types.ComponentAssets.PlayerPhysicsComponent
         ], "Player");
-
 
         // 6. Finally submit the Entity to the Asset Manager.
         //
@@ -256,7 +267,7 @@ export default class Player extends SceneComponent
             },
 
             primitive: {
-                topology: "triangle-strip",
+                topology: "triangle-list",
                 cullMode: "back"
             }
         });

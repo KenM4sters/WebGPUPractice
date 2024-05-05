@@ -71,16 +71,44 @@ export class SquareGeometryComponent extends Component
     public readonly mInstanceCount : number;
 }
 
-
-
-export class TransformComponent extends Component 
+export class SpriteComponent extends Component 
 {
-    constructor(label : string, transformMats : glm.mat4[], floatArray ?: Float32Array) 
+    constructor(c : Types.SpriteConfig) 
     {
-        super(label);
+        super(c.Label);
 
-        this.mModelMatrices = transformMats;
-        if(floatArray) this.mFloatArray = floatArray;
+        this.mPosition = c.Position;
+        this.mSize = c.Size;
+        this.mPhysics = c.Physics;
+        this.mModelMatrix = c.Transforms.ModelMatrix;
+        this.mCells = c.Cells;
+        this.mFloatArray = c.Transforms.FloatArray;
+    }
+
+    public mPosition : glm.vec3;
+    public mSize : glm.vec3;
+    public mCells : number[]; 
+
+    public mPhysics : Types.PhysicsConfig | undefined;
+
+    public mModelMatrix : glm.mat4;
+    public mFloatArray : Float32Array;
+}
+
+
+export class InstancedSpriteComponent extends Component 
+{
+    constructor(c : Types.InstancedSpriteConfig) 
+    {
+        super(c.Label);
+
+        this.mPosition = c.Position;
+        this.mSize = c.Size;
+
+        this.mPhysics = c.Physics;
+        
+        this.mModelMatrices = c.Transforms.ModelMatrices;
+        if(c.Transforms.FloatArray) this.mFloatArray = c.Transforms.FloatArray;
         else {
             this.mFloatArray = new Float32Array(this.mModelMatrices.length * 16);
             let offset = 0;
@@ -90,41 +118,16 @@ export class TransformComponent extends Component
                 offset += 16;
             }
         }
-
-    }
-    public mModelMatrices : glm.mat4[];
-    public mFloatArray : Float32Array;
-}
-
-
-export class SpriteComponent extends Component 
-{
-    constructor(label : string, position : glm.vec3[], size : glm.vec3[]) 
-    {
-        super(label);
-        this.mPosition = position;
-        this.mSize = size;
     }
 
     public mPosition : glm.vec3[] = [];
-    public readonly mSize : glm.vec3[] = [];
-}
+    public mSize : glm.vec3[] = [];
+    public mQuadrants : number[] = []; 
 
-export class PhysicsComponent extends Component 
-{
-    constructor(label : string, mass : number[] = [1.0], 
-        velocity : glm.vec3[] = [glm.vec3.fromValues(0.0, 0.0, 0.0)], 
-        acceleration : glm.vec3[] = [glm.vec3.fromValues(0.0, 0.0, 0.0)]) 
-    {
-        super(label);
-        this.mMass = mass;
-        this.mVelocity = velocity;
-        this.mAcceleration = acceleration;
-    }
+    public mPhysics : Types.InstancedPhysicsConfig | undefined;
 
-    public mMass : number[];
-    public mVelocity : glm.vec3[];
-    public mAcceleration : glm.vec3[];
+    public mModelMatrices : glm.mat4[] = [];
+    public mFloatArray : Float32Array;
 }
 
 

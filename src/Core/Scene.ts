@@ -1,11 +1,6 @@
-import * as glm from "gl-matrix";
 import { Utils } from "../Utils";
-import PerspectiveCamera, { CameraDirections } from "./PerspectiveCamera";
-import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
-import { CameraComponent, MaterialComponent, SceneComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
-import Input from "./Input";
+import { CameraComponent, SceneComponent } from "../ECS/Components";
 import { Types } from "../Types";
-import Entity from "../ECS/Entity";
 import AssetManager from "../AssetManager";
 import Level from "./Level";
 import OrthographicCamera from "./OrthographicCamera";
@@ -30,14 +25,10 @@ export default class Scene implements Types.IApplicationLayer
         this.mSceneComponents.push(level);
     }
 
-    public ListenToUserInput() : void 
-    {   
-    }
-
-    public OnCanvasResize(w : number, h : number) : void
+    public OnCanvasResize() : void
     {
-        this.mCamera.mRight = w;
-        this.mCamera.mBottom = h;
+        this.mCamera.mRight = Utils.Sizes.mCanvasWidth;
+        this.mCamera.mBottom = Utils.Sizes.mCanvasHeight;
         this.mCamera.UpdateProjectionMatrix();
     }
 

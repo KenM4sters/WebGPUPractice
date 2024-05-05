@@ -1,3 +1,4 @@
+import * as glm from "gl-matrix";
 import { BufferLayout } from "./Core/Buffer";
 
 export namespace Types 
@@ -11,15 +12,66 @@ export namespace Types
         val : T;
     }; 
 
+    export interface GridCell 
+    {
+        Position : { x : number, y : number};
+        Size : { x : number, y : number};
+    };
+
+    export interface PhysicsConfig 
+    {
+        Velocity : glm.vec3;
+        Acceleration : glm.vec3;
+        Mass : number;
+    };
+
+    export interface InstancedPhysicsConfig 
+    {
+        Velocity : glm.vec3[];
+        Acceleration : glm.vec3[];
+        Mass : number[];
+    };
+
+    export interface TransformConfig 
+    {
+        ModelMatrix : glm.mat4;
+        FloatArray : Float32Array;
+    };
+
+
+    export interface InstancedTransformConfig 
+    {
+        ModelMatrices : glm.mat4[];
+        FloatArray : Float32Array;
+    };
+    
+    export interface SpriteConfig 
+    {
+        Label : string;
+        Position : glm.vec3;
+        Size : glm.vec3;
+        Cells : number[]; 
+        Transforms : TransformConfig;
+        Physics : PhysicsConfig | undefined;
+    };
+
+    export interface InstancedSpriteConfig 
+    {
+        Label : string;
+        Position : glm.vec3[];
+        Size : glm.vec3[];
+        Cells : number[]; 
+        Transforms : InstancedTransformConfig;
+        Physics : InstancedPhysicsConfig | undefined;
+    };
+
     //----------------------------------------------------------------
     // Renderer.
     //----------------------------------------------------------------  
-
     
     export interface IApplicationLayer 
     {
         OnCanvasResize(w : number, h : number) : void;
-        ListenToUserInput() : void;
     };
 
     export interface IRenderPass 
@@ -61,15 +113,12 @@ export namespace Types
         CameraComponent = 0,
 
         PlayerMaterialComponent = 1,
-        PlayerTransformComponent = 2,
-        PlayerGeometryComponent = 3,
-        PlayerSpriteComponent = 4,
-        PlayerPhysicsComponent = 5,
+        PlayerGeometryComponent = 2,
+        PlayerSpriteComponent = 3,
 
-        LevelMaterialComponent = 6,
-        LevelTransformComponent = 7,
-        LevelGeometryComponent = 8,
-        LevelSpriteComponenet = 9,
+        LevelMaterialComponent = 4,
+        LevelGeometryComponent = 5,
+        LevelSpriteComponenet = 6,
     };
 
     export enum BindGroupAssets 

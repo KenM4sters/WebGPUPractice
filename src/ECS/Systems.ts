@@ -1,6 +1,6 @@
 import Entity from "./Entity";
  
-export abstract class System 
+export abstract class RenderSystem 
 {
     constructor(device : GPUDevice) 
     {
@@ -13,8 +13,20 @@ export abstract class System
 
     public abstract UpdateBuffers() : void;
 
-    public abstract ListenToUserInput() : void;
-
     public readonly mEntities : Entity[] = [];
     public readonly mDevice : GPUDevice;
 };
+
+export abstract class SupportSystem
+{
+    constructor() 
+    {
+    }
+
+    public abstract Run() : void;
+
+    public abstract CollectEntites() : void;
+
+    public readonly mEntities : Entity[] = [];
+
+}

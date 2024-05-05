@@ -1,9 +1,9 @@
 import AssetManager from "../AssetManager";
 import { Types } from "../Types";
-import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "./Components";
-import { System } from "./Systems";
+import { CameraComponent, InstancedSpriteComponent, MaterialComponent, SpriteComponent, SquareGeometryComponent } from "./Components";
+import { RenderSystem } from "./Systems";
 
-export default class BatchSystem extends System 
+export default class BatchSystem extends RenderSystem 
 {
     constructor(device : GPUDevice) 
     {
@@ -16,10 +16,9 @@ export default class BatchSystem extends System
 
         for(const e of AssetManager.GetAllEntities()) 
         {
-            const cTransformComponent = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
-            if(!cTransformComponent) continue;
-            else if(cTransformComponent.mModelMatrices.length <= 1) continue;
-            else this.mEntities.push(e);
+            const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`);
+            if(cSprite && cSprite instanceof InstancedSpriteComponent ) this.mEntities.push(e);
+            else continue;
 
         }
     }
@@ -36,8 +35,8 @@ export default class BatchSystem extends System
 
         for(const e of this.mEntities) 
         {
-            const transform = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
-            if(!transform) {console.warn("Entity sumbitted to BatchSystem does not contain a Transform Component"); continue; }
+            const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`) as SpriteComponent | undefined;
+            if(!cSprite) {console.warn("Entity sumbitted to BatchSystem does not contain a Sprite Component"); continue; }
             
             const material = e.GetComponent(`${e.mLabel + `_Material_Component`}`) as MaterialComponent | undefined;
             if(!material) {console.warn("Entity sumbitted to BatchSystem does not contain a Material Component"); continue; }
@@ -49,9 +48,9 @@ export default class BatchSystem extends System
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(
                         Types.UBOAssets.LevelInstanceTransformUBO), 
                         0, 
-                        transform.mFloatArray.buffer, 
-                        transform.mFloatArray.byteOffset, 
-                        transform.mFloatArray.byteLength
+                        cSprite.mFloatArray.buffer, 
+                        cSprite.mFloatArray.byteOffset, 
+                        cSprite.mFloatArray.byteLength
                     );                    
                     break;
             }
@@ -79,10 +78,5 @@ export default class BatchSystem extends System
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
             pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            
         };
-    }
-
-    public ListenToUserInput(): void 
-    {
-        
     }
 }

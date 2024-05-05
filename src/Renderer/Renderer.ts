@@ -1,9 +1,10 @@
 import Device from "../Device";
 import BatchSystem from "../ECS/BatchSystem";
 import CollisionSystem from "../ECS/CollisionSystem";
-import Physics from "../ECS/Physics";
+import PhysicsSystem from "../ECS/Physics";
 import { SimpleSystem } from "../ECS/SimpleSystem";
-import { System } from "../ECS/Systems";
+import SpatialGrid from "../ECS/SpatialGrid";
+import { RenderSystem } from "../ECS/Systems";
 import { Types } from "../Types";
 import { Utils } from "../Utils";
 
@@ -34,18 +35,19 @@ export default class Renderer implements Types.IApplicationLayer
             alphaMode: "premultiplied"
         });
 
-        // Entity Component Systems.
+        // Render Systems.
         //
         const cSimpleSystem = new SimpleSystem(this.mDevice.mGPU);
         const cBatchSystem = new BatchSystem(this.mDevice.mGPU);
-        const cCollisionSystem = new CollisionSystem(this.mDevice.mGPU);
-        const cPhysicsSystem = new Physics(this.mDevice.mGPU);
+        this.mRenderSystems.push(cSimpleSystem);
+        this.mRenderSystems.push(cBatchSystem);
 
-        this.mSystems.push(cSimpleSystem);
-        this.mSystems.push(cBatchSystem);
-        this.mSystems.push(cCollisionSystem);
-        this.mSystems.push(cPhysicsSystem);
-
+        // Support Systems
+        //
+        this.mSpatialGrid = new SpatialGrid();
+        this.mCollisionSystem = new CollisionSystem();
+        this.mPhysicsSystem = new PhysicsSystem();
+    
     }
 
     public Draw(): void {
@@ -82,7 +84,7 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Update Buffers (In most cases Uniform Buffers) for each Render System.
         //
-        for(const sys of this.mSystems) 
+        for(const sys of this.mRenderSystems) 
         {
             sys.UpdateBuffers();
         }
@@ -94,10 +96,15 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Run each Render System.
         //
-        for(const sys of this.mSystems) 
+        for(const sys of this.mRenderSystems) 
         {
             sys.Run(pass);
         }
+
+        // Run each Support System.
+        this.mSpatialGrid.Run();
+        this.mCollisionSystem.Run();
+        this.mPhysicsSystem.Run();
 
         // End render pass
         //
@@ -108,15 +115,7 @@ export default class Renderer implements Types.IApplicationLayer
         this.mDevice.mGPU.queue.submit([encoder.finish()]);
     }
 
-    public ListenToUserInput(): void 
-    { 
-        for(const sys of this.mSystems) 
-        {
-            sys.ListenToUserInput();
-        }
-    }
-
-    public OnCanvasResize(w: number, h: number): void {
+    public OnCanvasResize(): void {
 
         // Render Pass Configuration.
         //
@@ -157,8 +156,11 @@ export default class Renderer implements Types.IApplicationLayer
         }
     }
 
-    private mContext : GPUCanvasContext;
-    private mDevice : Device;
     private mRenderPass !: Types.IRenderPass;
-    private readonly mSystems : System[] = [];
+    private readonly mContext : GPUCanvasContext;
+    private readonly mDevice : Device;
+    private readonly mRenderSystems : RenderSystem[] = [];
+    private readonly mSpatialGrid : SpatialGrid;
+    private readonly mCollisionSystem : CollisionSystem;
+    private readonly mPhysicsSystem : PhysicsSystem;
 }

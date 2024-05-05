@@ -1,9 +1,9 @@
 import AssetManager from "../AssetManager";
 import { Types } from "../Types";
-import { CameraComponent, MaterialComponent, SquareGeometryComponent, TransformComponent } from "./Components";
-import { System } from "./Systems";
+import { CameraComponent, MaterialComponent, SpriteComponent, SquareGeometryComponent } from "./Components";
+import { RenderSystem } from "./Systems";
 
-export class SimpleSystem extends System 
+export class SimpleSystem extends RenderSystem 
 {
     constructor(device : GPUDevice) 
     {
@@ -14,7 +14,8 @@ export class SimpleSystem extends System
     public CollectEntites(): void {
         for(const e of AssetManager.GetAllEntities()) 
         {
-            if(e.GetComponent(`${e.mLabel + `_Transform_Component`}`)) this.mEntities.push(e);
+            const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`);
+            if(cSprite && cSprite instanceof SpriteComponent) this.mEntities.push(e);
             else continue;
         }                  
     }
@@ -30,8 +31,8 @@ export class SimpleSystem extends System
 
         for(const e of this.mEntities) 
         {
-            const transform = e.GetComponent(`${e.mLabel + `_Transform_Component`}`) as TransformComponent | undefined;
-            if(!transform) {console.warn("Entity sumbitted to SimpleSystem does not contain a Transform Component"); continue; }
+            const sprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`) as SpriteComponent | undefined;
+            if(!sprite) {console.warn("Entity sumbitted to SimpleSystem does not contain a Sprite Component"); continue; }
             
             const material = e.GetComponent(`${e.mLabel + `_Material_Component`}`) as MaterialComponent | undefined;
             if(!material) {console.warn("Entity sumbitted to SimpleSystem does not contain a Material Component"); continue; }
@@ -40,7 +41,7 @@ export class SimpleSystem extends System
             {
                 case "Player": 
                     this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerMaterialUBO), 0, new Float32Array(material.mAlbedo as number[]));   
-                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerTransformUBO), 0, transform.mFloatArray);
+                    this.mDevice.queue.writeBuffer(AssetManager.GetUBO(Types.UBOAssets.PlayerTransformUBO), 0, sprite.mFloatArray);
                     
                     break;
             }
@@ -67,10 +68,5 @@ export class SimpleSystem extends System
             pass.setVertexBuffer(0, geometry.mGPUBuffer);
             pass.draw(geometry.mData.Vertices.byteLength / geometry.mData.BufferLayout.GetStride(), geometry.mInstanceCount);            
         };
-    }
-
-    public ListenToUserInput(): void 
-    {
-            
     }
 };

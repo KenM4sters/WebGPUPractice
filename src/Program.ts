@@ -34,25 +34,18 @@ export default class Program implements Types.IApplicationLayer
 
         this.mRenderer.Draw(); // Initiates a render pass and runs each render system.
 
-        this.ListenToUserInput(); // Calls each ListenToUserInput() method on each application layer.
         this.mStatsUI.end();
 
         window.requestAnimationFrame(() => this.Run()); // Game Loop.
     }
 
-    public ListenToUserInput()
-    {
-        this.mRenderer.ListenToUserInput();
-        this.mScene.ListenToUserInput();
-    }
-
     // Callback function for window resize event.
     // The width and height are the dimensions of the canvas after its been resized in response 
     // to the window resize event.
-    public OnCanvasResize = (w : number, h : number) =>  
+    public OnCanvasResize = () =>  
     {
-        this.mScene.OnCanvasResize(w, h);
-        this.mRenderer.OnCanvasResize(w, h);
+        this.mScene.OnCanvasResize();
+        this.mRenderer.OnCanvasResize();
     }
 
     private Init(gpu : GPUDevice) : void 

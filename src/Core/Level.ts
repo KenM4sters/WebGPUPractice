@@ -1,6 +1,6 @@
 import * as glm from "gl-matrix"
 import AssetManager from "../AssetManager";
-import { MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent, TransformComponent } from "../ECS/Components";
+import { InstancedSpriteComponent, MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent } from "../ECS/Components";
 import Entity from "../ECS/Entity";
 import { Types } from "../Types";
 
@@ -69,20 +69,33 @@ export default class Level extends SceneComponent
             floatArray.set(m, offset);
             offset += 16; // Remember to increment the offset by the size of a mat4x4<f32>.
         }
+
+
         
         let levelColor = glm.vec3.fromValues(0.5, 0.0, 1.0);
 
+        const cSpriteConfig : Types.InstancedSpriteConfig = 
+        {
+            Label: "Level_Sprite_Component",
+            Position: positions,
+            Size: sizes,
+            Cells: [],
+            Physics: undefined,
+            Transforms: 
+            {
+                ModelMatrices: matArray,
+                FloatArray: floatArray
+            }
+        };
         // 2. The scene submits a camera component before a level is instantiated, so we can just query
         // the asset manager for the camera component.
         //
         let levelGeometry = new SquareGeometryComponent("Level_Geometry_Component", device, this.mInstanceCount);
         let levelMat = new MaterialComponent("Level_Material_Component", Types.ShaderAssets.LevelShader, levelColor);
-        let levelTransform = new TransformComponent("Level_Transform_Component", matArray, floatArray);
-        let levelSprite = new SpriteComponent("Level_Sprite_Component", positions, sizes);
+        let levelSprite = new InstancedSpriteComponent(cSpriteConfig);
 
         AssetManager.SubmitComponent(levelGeometry, Types.ComponentAssets.LevelGeometryComponent);
         AssetManager.SubmitComponent(levelMat, Types.ComponentAssets.LevelMaterialComponent);
-        AssetManager.SubmitComponent(levelTransform, Types.ComponentAssets.LevelTransformComponent);
         AssetManager.SubmitComponent(levelSprite, Types.ComponentAssets.LevelSpriteComponenet);
 
         // 3. Create the level entity and submit it to the Asset Manager.
@@ -91,7 +104,6 @@ export default class Level extends SceneComponent
             Types.ComponentAssets.CameraComponent,
             Types.ComponentAssets.LevelGeometryComponent,
             Types.ComponentAssets.LevelMaterialComponent,
-            Types.ComponentAssets.LevelTransformComponent,
             Types.ComponentAssets.LevelSpriteComponenet
         ], "Level");
 
@@ -267,7 +279,7 @@ export default class Level extends SceneComponent
             },
             primitive: 
             {
-                topology: "triangle-strip",
+                topology: "triangle-list",
                 cullMode: "back"
             }
         });

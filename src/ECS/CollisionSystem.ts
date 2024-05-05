@@ -1,20 +1,15 @@
 import * as glm from "gl-matrix"
 import AssetManager from "../AssetManager";
 import { SpriteComponent } from "./Components";
-import { System } from "./Systems";
+import { SupportSystem } from "./Systems";
 
-    export default class CollisionSystem extends System
+    export default class CollisionSystem extends SupportSystem
     {
-        constructor(device : GPUDevice) 
+        constructor() 
         {
-            super(device);
+            super();
             this.CollectEntites();
         }
-
-        public UpdateBuffers(): void 
-        {
-            
-        }   
 
         public CollectEntites(): void 
         {
@@ -31,7 +26,7 @@ import { System } from "./Systems";
 
         }
 
-        public Run(pass: GPURenderPassEncoder): void 
+        public Run(): void 
         {   
             for(let i = 0; i < this.mEntities.length; i++) 
             {
