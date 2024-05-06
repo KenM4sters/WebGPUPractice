@@ -23,8 +23,6 @@ export abstract class SupportSystem
     {
     }
 
-    public abstract Run() : void;
-
     public abstract CollectEntites() : void;
 
     public readonly mEntities : Entity[] = [];

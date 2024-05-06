@@ -31,7 +31,7 @@ export default class SpatialGrid extends SupportSystem
                     Size: {x: this.mCellWidth / cWidthSegs, y: this.mCellHeight / cHeightSegs},
                 };
                 this.mGridCells.push(quad);
-                this.mEntityGridMap.set(quad.Position, []);
+                // this.mEntityGridMap.set(quad.Position, []);
                 
             }
         }         
@@ -48,15 +48,15 @@ export default class SpatialGrid extends SupportSystem
                 this.AssignGrids(e);
             }
             else continue;
-        }
-        
+        }        
     }
 
     public Run(): void 
     {
+        this.mEntityGridMap.clear();
         for(const e of this.mEntities) 
         {
-            this.AssignGrids(e);
+            this.AssignGrids(e);            
         }
     }
 
@@ -65,18 +65,21 @@ export default class SpatialGrid extends SupportSystem
         const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`);
         if(cSprite && cSprite instanceof SpriteComponent) 
         {
-            const cXcell = Math.floor(cSprite.mPosition[0] / this.mCellWidth);
-            const cYcell = Math.floor(cSprite.mPosition[1] / this.mCellHeight);
+            const cXcell = Math.round(cSprite.mPosition[0] / this.mCellWidth);
+            const cYcell = Math.round(cSprite.mPosition[1] / this.mCellHeight);
 
-            const cellEntities = this.mEntityGridMap.get({x: cXcell, y: cYcell});
-            
-            cellEntities?.push(e);
-            
-            
-            
+            this.AddEntityToCells(`${cXcell},${cYcell}`, e);            
+
         } 
         else if(cSprite && cSprite instanceof InstancedSpriteComponent) 
         {
+            for(const pos of cSprite.mPosition) 
+            {   
+                const cXcell = Math.round(pos[0] / this.mCellWidth);
+                const cYcell = Math.round(pos[1] / this.mCellHeight);
+    
+                this.AddEntityToCells(`${cXcell},${cYcell}`, e); 
+            }         
         } 
         else {
             console.warn("Attempting to assing a grid to an entity with no Sprite Component!"); 
@@ -84,7 +87,23 @@ export default class SpatialGrid extends SupportSystem
         }
     }
 
-    private readonly mEntityGridMap = new Map<{x: number, y: number}, Entity[]>(); 
+    private AddEntityToCells(cell : string, e : Entity) : void 
+    {
+        if(this.mEntityGridMap.has(cell)) 
+        {
+            const cArr = this.mEntityGridMap.get(cell);
+            if(!cArr) {console.warn("Cell doesn't exist!"); return;}
+            cArr.push(e);
+            this.mEntityGridMap.set(cell, cArr);
+            
+        }
+        else 
+        {
+            this.mEntityGridMap.set(cell, [e]);
+        }
+    }
+
+    public readonly mEntityGridMap = new Map<string, Entity[]>(); 
     private readonly mGridCells : Types.GridCell[] = [];
     private readonly mCellWidth : number;
     private readonly mCellHeight : number;

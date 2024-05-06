@@ -66,7 +66,9 @@ export default class PhysicsSystem extends SupportSystem
         Input.CallSingleKeyPress(" ", () => {
             this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, -10.0, 0.0));
         });
+        if(Input.IsKeyPressed("w")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, -10.0, 0.0));   
         if(Input.IsKeyPressed("a")) this.AppplyForce(playerSprite, glm.vec3.fromValues(-10.0, 0.0, 0.0));   
+        if(Input.IsKeyPressed("s")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, 10.0, 0.0));   
         if(Input.IsKeyPressed("d")) this.AppplyForce(playerSprite, glm.vec3.fromValues(10.0, 0.0, 0.0));
     }
 

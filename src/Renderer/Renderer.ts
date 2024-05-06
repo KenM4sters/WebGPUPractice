@@ -103,7 +103,7 @@ export default class Renderer implements Types.IApplicationLayer
 
         // Run each Support System.
         this.mSpatialGrid.Run();
-        this.mCollisionSystem.Run();
+        this.mCollisionSystem.Run(this.mSpatialGrid.mEntityGridMap);
         this.mPhysicsSystem.Run();
 
         // End render pass
