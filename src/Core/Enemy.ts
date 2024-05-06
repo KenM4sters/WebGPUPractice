@@ -1,13 +1,13 @@
 import * as glm from "gl-matrix"
-import AssetManager from "../AssetManager";
-import { InstancedSpriteComponent, MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent } from "../ECS/Components";
 import Entity from "../ECS/Entity";
 import { Types } from "../Types";
-
-import levelShaderSrc from "../../Shaders/Level.wgsl?raw";
 import { Utils } from "../Utils";
+import ECSWizard from "../ECS/ECSWizard";
+import RenderWizard from "../Renderer/RenderWizard";
+import { InstancedSprite, Material, SceneComponent, SquareGeometry } from "../ECS/Components";
+import EnemyShaderSrc from "../../Shaders/Enemy.wgsl?raw";
 
-export default class Level extends SceneComponent
+export default class Enemy extends SceneComponent
 {
     constructor(device : GPUDevice) 
     {
@@ -30,6 +30,8 @@ export default class Level extends SceneComponent
         const half_w = w/2.0;
         const half_h = h/2.0; 
 
+        const colliders : Types.ICollisionBody[] = [];
+
         const positions : glm.vec3[] = 
         [
             glm.vec3.fromValues(half_w, half_h + 100.0, 0.0),
@@ -45,15 +47,15 @@ export default class Level extends SceneComponent
 
         const sizes : glm.vec3[] = 
         [
-            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
 
-            glm.vec3.fromValues(100.0, 10, 1.0),
-            glm.vec3.fromValues(100.0, 10, 1.0),
-            glm.vec3.fromValues(100.0, 10, 1.0),
-            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
 
-            glm.vec3.fromValues(100.0, 10, 1.0),
-            glm.vec3.fromValues(100.0, 10, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
+            glm.vec3.fromValues(30.0, 30, 1.0),
         ];
 
         let offset = 0;
@@ -68,46 +70,55 @@ export default class Level extends SceneComponent
             matArray.push(m);
             floatArray.set(m, offset);
             offset += 16; // Remember to increment the offset by the size of a mat4x4<f32>.
+
+            // Collider
+            const c : Types.ICollisionBody = 
+            {
+                Position: {x: positions[i][0], y: positions[i][1]},
+                Size: {x: sizes[i][0], y: sizes[i][1]},
+                InstanceIndex: i
+            }
+
+            colliders.push(c);
         }
-
-
-        
-        let levelColor = glm.vec3.fromValues(0.5, 0.0, 1.0);
+ 
+        let EnemyColor = glm.vec3.fromValues(0.4, 0.8, 0.4);
 
         const cSpriteConfig : Types.InstancedSpriteConfig = 
         {
-            Label: "Level_Sprite_Component",
+            Label: "Enemy_Sprite",
             Position: positions,
             Size: sizes,
-            Cells: [],
+            Collider: colliders,
             Physics: undefined,
             Transforms: 
             {
-                ModelMatrices: matArray,
+                Model: matArray,
                 FloatArray: floatArray
             }
         };
-        // 2. The scene submits a camera component before a level is instantiated, so we can just query
+
+        // 2. The scene submits a camera component before a Enemy is instantiated, so we can just query
         // the asset manager for the camera component.
         //
-        let levelGeometry = new SquareGeometryComponent("Level_Geometry_Component", device, this.mInstanceCount);
-        let levelMat = new MaterialComponent("Level_Material_Component", Types.ShaderAssets.LevelShader, levelColor);
-        let levelSprite = new InstancedSpriteComponent(cSpriteConfig);
+        let enemyGeometry = new SquareGeometry("Enemy_Geometry", device, this.mInstanceCount);
+        let enemyMat = new Material("Enemy_Material", Types.Shaders.EnemyShader, EnemyColor);
+        let enemySprite = new InstancedSprite(cSpriteConfig);
 
-        AssetManager.SubmitComponent(levelGeometry, Types.ComponentAssets.LevelGeometryComponent);
-        AssetManager.SubmitComponent(levelMat, Types.ComponentAssets.LevelMaterialComponent);
-        AssetManager.SubmitComponent(levelSprite, Types.ComponentAssets.LevelSpriteComponenet);
+        ECSWizard.SubmitSquareGeometry(enemyGeometry, Types.SquareGeometries.EnemyGeometry);
+        ECSWizard.SubmitMaterial(enemyMat, Types.Materials.EnemyMaterial);
+        ECSWizard.SubmitInstancedSprite(enemySprite, Types.InstancedSprites.EnemyInstancedSprite);
 
-        // 3. Create the level entity and submit it to the Asset Manager.
+        // 3. Create the Enemy entity and submit it to the Asset Manager.
         //
-        const levelEntity = new Entity([
-            Types.ComponentAssets.CameraComponent,
-            Types.ComponentAssets.LevelGeometryComponent,
-            Types.ComponentAssets.LevelMaterialComponent,
-            Types.ComponentAssets.LevelSpriteComponenet
-        ], "Level");
+        const EnemyEntity = new Entity([
+            Types.Cameras.Camera,
+            Types.SquareGeometries.EnemyGeometry,
+            Types.Materials.EnemyMaterial,
+            Types.InstancedSprites.EnemyInstancedSprite
+        ], "Enemy");
 
-        AssetManager.SubmitEntity(levelEntity, Types.EntityAssets.Level);
+        ECSWizard.SubmitEntity(EnemyEntity, Types.Entities.Enemy);
     }
 
     
@@ -118,26 +129,26 @@ export default class Level extends SceneComponent
         // Components.
         //----------------------------------------------------------------
 
-        const cLevelEntity = AssetManager.GetEntity(Types.EntityAssets.Level) as Entity;
-        const cLevelGeometry = cLevelEntity.GetComponent("Level_Geometry_Component") as SquareGeometryComponent;
+        const cEnemyEntity = ECSWizard.GetEntity(Types.Entities.Enemy) as Entity;
+        const cEnemyGeometry = cEnemyEntity.GetComponent("Enemy_Geometry") as SquareGeometry;
 
         //-----------------------------------------------------------------
         // Vertex Buffers.
         //-----------------------------------------------------------------
 
-        device.queue.writeBuffer(cLevelGeometry.mGPUBuffer, 0, cLevelGeometry.mData.Vertices);
+        device.queue.writeBuffer(cEnemyGeometry.mGPUBuffer, 0, cEnemyGeometry.mData.Vertices);
 
 
         //-----------------------------------------------------------------
         // Shader Modules.
         //-----------------------------------------------------------------
 
-        const cLevelShaderModule = device.createShaderModule({
-            label: "Level_Shader_Module",
-            code: levelShaderSrc
+        const cEnemyShaderModule = device.createShaderModule({
+            label: "Enemy_Shader_Module",
+            code: EnemyShaderSrc
         });
 
-        AssetManager.SubmitShader(cLevelShaderModule, Types.ShaderAssets.LevelShader);
+        RenderWizard.SubmitShader(cEnemyShaderModule, Types.Shaders.EnemyShader);
     
         //-----------------------------------------------------------------
         // Uniform Buffer Objects.
@@ -145,22 +156,22 @@ export default class Level extends SceneComponent
 
         // (Camera already handled by the Scene).
     
-        // Level
+        // Enemy
         //
-        const cLevelMaterialUBO = device.createBuffer({
-            label: "Level_Material_UBO",
+        const cEnemyMaterialUBO = device.createBuffer({
+            label: "Enemy_Material_UBO",
             size: (4*3),
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
-        const cLevelInstanceTransformUBO = device.createBuffer({
-            label: "Level_Instance_Transform_UBO",
+        const cEnemyInstanceTransformUBO = device.createBuffer({
+            label: "Enemy_Instance_Transform_UBO",
             size: (4*16 * this.mInstanceCount),  // 1 matrix = 16 4-byte floats, and we need as many matrices as we have instances.
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
         
-        AssetManager.SubmitUBO(cLevelMaterialUBO, Types.UBOAssets.LevelMaterialUBO);
-        AssetManager.SubmitUBO(cLevelInstanceTransformUBO, Types.UBOAssets.LevelInstanceTransformUBO);
+        RenderWizard.SubmitUBO(cEnemyMaterialUBO, Types.UBOs.EnemyMaterialUBO);
+        RenderWizard.SubmitUBO(cEnemyInstanceTransformUBO, Types.UBOs.EnemyInstanceTransformUBO);
 
         //-----------------------------------------------------------------
         // Bind Group Layouts.
@@ -207,40 +218,40 @@ export default class Level extends SceneComponent
         // Bind Groups
         //----------------------------------------------------------------
 
-        const cLevelMaterialBindGroup = device.createBindGroup({
-            label: "Level_Material_Bind_Group",
+        const cEnemyMaterialBindGroup = device.createBindGroup({
+            label: "Enemy_Material_Bind_Group",
             layout: cBasicMaterialBindGroupLayout,
             entries: 
             [
                 {
                     binding: 0,
-                    resource: {buffer: cLevelMaterialUBO}
+                    resource: {buffer: cEnemyMaterialUBO}
                 }
             ]
         });
 
-        const cLevelInstanceTransformBindGroup = device.createBindGroup({
-            label: "Level_Instance_Transform_Bind_Group",
+        const cEnemyInstanceTransformBindGroup = device.createBindGroup({
+            label: "Enemy_Instance_Transform_Bind_Group",
             layout: cTransformBindGroupLayout,
             entries: 
             [
                 {
                     binding: 0,
-                    resource: {buffer: cLevelInstanceTransformUBO}
+                    resource: {buffer: cEnemyInstanceTransformUBO}
                 }
             ]
         });
 
-        AssetManager.SubmitBindGroup(cLevelMaterialBindGroup, Types.BindGroupAssets.LevelMaterialBindGroup);
-        AssetManager.SubmitBindGroup(cLevelInstanceTransformBindGroup, Types.BindGroupAssets.LevelInstanceTransformBindGroup);
+        RenderWizard.SubmitBindGroup(cEnemyMaterialBindGroup, Types.BindGroups.EnemyMaterialBindGroup);
+        RenderWizard.SubmitBindGroup(cEnemyInstanceTransformBindGroup, Types.BindGroups.EnemyInstanceTransformBindGroup);
 
 
         //----------------------------------------------------------------
         // Render Pipelines.
         //----------------------------------------------------------------
 
-        const cLevelPipelineLayout = device.createPipelineLayout({
-            label: "Level_Pipeline_Layout",
+        const cEnemyPipelineLayout = device.createPipelineLayout({
+            label: "Enemy_Pipeline_Layout",
             bindGroupLayouts: 
             [
                 cCameraBindGroupLayout,         // @Group(0)
@@ -249,20 +260,20 @@ export default class Level extends SceneComponent
             ],
         });
 
-        const cLevelRenderPipeline = device.createRenderPipeline({
-            label: "Level_Pipeline",
-            layout: cLevelPipelineLayout,
+        const cEnemyRenderPipeline = device.createRenderPipeline({
+            label: "Enemy_Pipeline",
+            layout: cEnemyPipelineLayout,
             vertex: 
             {
-                module: cLevelShaderModule,
+                module: cEnemyShaderModule,
                 entryPoint: "mainVert",
                 buffers: [
-                    cLevelGeometry.mData.BufferLayout.GetNativeLayout()
+                    cEnemyGeometry.mData.BufferLayout.GetNativeLayout()
                 ]
             },
             fragment: 
             {
-                module: cLevelShaderModule,
+                module: cEnemyShaderModule,
                 entryPoint: "mainFrag",
                 targets: 
                 [
@@ -284,7 +295,7 @@ export default class Level extends SceneComponent
             }
         });
 
-        AssetManager.SubmitPipeline(cLevelRenderPipeline, Types.PipelineAssets.LevelRenderPipeline);
+        RenderWizard.SubmitPipeline(cEnemyRenderPipeline, Types.Pipelines.EnemyRenderPipeline);
 
     }   
 

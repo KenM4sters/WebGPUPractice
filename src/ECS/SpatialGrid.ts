@@ -1,10 +1,10 @@
 import * as glm from "gl-matrix";
-import AssetManager from "../AssetManager";
 import { Types } from "../Types";
 import { Utils } from "../Utils";
-import { InstancedSpriteComponent, SpriteComponent } from "./Components";
 import Entity from "./Entity";
 import { SupportSystem } from "./Systems";
+import ECSWizard from "./ECSWizard";
+import { InstancedSprite, Sprite } from "./Components";
 
 export default class SpatialGrid extends SupportSystem 
 {
@@ -25,14 +25,12 @@ export default class SpatialGrid extends SupportSystem
         {
             for(let j = 0; j < cWidthSegs; j++) 
             {
-                let quad : Types.GridCell = 
+                let quad : Types.Cell = 
                 {
                     Position: {x: this.mCellWidth * (j/cWidthSegs), y: this.mCellHeight * (i/cHeightSegs)},
                     Size: {x: this.mCellWidth / cWidthSegs, y: this.mCellHeight / cHeightSegs},
                 };
                 this.mGridCells.push(quad);
-                // this.mEntityGridMap.set(quad.Position, []);
-                
             }
         }         
         this.CollectEntites();
@@ -40,7 +38,7 @@ export default class SpatialGrid extends SupportSystem
 
     public CollectEntites(): void 
     {
-        for(const e of AssetManager.GetAllEntities()) 
+        for(const e of ECSWizard.GetAllEntities()) 
         {
             if(e.GetComponent(`${e.mLabel + `_Sprite_Component`}`)) 
             {
@@ -48,7 +46,7 @@ export default class SpatialGrid extends SupportSystem
                 this.AssignGrids(e);
             }
             else continue;
-        }        
+        }           
     }
 
     public Run(): void 
@@ -62,8 +60,8 @@ export default class SpatialGrid extends SupportSystem
 
     private AssignGrids(e : Entity) : void 
     {
-        const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`);
-        if(cSprite && cSprite instanceof SpriteComponent) 
+        const cSprite = e.GetComponent(`${e.mLabel + `_Sprite`}`);
+        if(cSprite && cSprite instanceof Sprite) 
         {
             const cXcell = Math.round(cSprite.mPosition[0] / this.mCellWidth);
             const cYcell = Math.round(cSprite.mPosition[1] / this.mCellHeight);
@@ -71,7 +69,7 @@ export default class SpatialGrid extends SupportSystem
             this.AddEntityToCells(`${cXcell},${cYcell}`, e);            
 
         } 
-        else if(cSprite && cSprite instanceof InstancedSpriteComponent) 
+        else if(cSprite && cSprite instanceof InstancedSprite) 
         {
             for(const pos of cSprite.mPosition) 
             {   
@@ -104,7 +102,7 @@ export default class SpatialGrid extends SupportSystem
     }
 
     public readonly mEntityGridMap = new Map<string, Entity[]>(); 
-    private readonly mGridCells : Types.GridCell[] = [];
+    private readonly mGridCells : Types.Cell[] = [];
     private readonly mCellWidth : number;
     private readonly mCellHeight : number;
 };   

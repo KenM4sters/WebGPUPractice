@@ -1,24 +1,20 @@
-import AssetManager from "../AssetManager";
-import { Types } from "../Types";
 import { Component } from "./Components";
+import ECSWizard from "./ECSWizard";
 
 export default class Entity 
 {
-    constructor(components : Types.ComponentAssets[], label : string = "EntityWithNoName") 
-    { 
-        for(const a of components) 
-        {
-            const cComponent = AssetManager.GetComponent(a);
-            if(!cComponent) continue;
-            this.mComponentIndexes[cComponent.mLabel] = a;
-        }  
+    constructor(label : string) 
+    {          
         this.mLabel = label;
+        this.mUUID = Entity.UUIDCounter++;
     };
 
-    GetComponent<T extends Component>(componentName: string): T | undefined {
-        return AssetManager.GetComponent(this.mComponentIndexes[componentName]) as T | undefined;
+    public AddComponent(comp : Component) : void 
+    {
+        ECSWizard.SubmitComponent(comp);
     }
 
-    private readonly mComponentIndexes : Record<string, Types.ComponentAssets> = {};
     public readonly mLabel : string;
+    public readonly mUUID : number;
+    private static UUIDCounter : number = 0;
 };

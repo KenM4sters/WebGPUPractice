@@ -13,7 +13,7 @@ export default class OrthographicCamera
     
     public UpdateProjectionMatrix(): void 
     {
-        this.mProjectionMatrix = glm.mat4.ortho(this.mProjectionMatrix, this.mLeft, this.mRight, this.mBottom, this.mTop, -1.0, 1.0);
+        this.mProjectionMatrix = glm.mat4.ortho(this.mProjectionMatrix, this.mLeft, this.mRight, this.mBottom, this.mTop, -10.0, 10.0);
     }
 
     public UpdateViewMatrix() : void 

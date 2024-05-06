@@ -1,10 +1,11 @@
 import * as glm from "gl-matrix";
 import simpleSquareShaderSrc from  "../../Shaders/Square.wgsl?raw"
-import { MaterialComponent, SceneComponent, SpriteComponent, SquareGeometryComponent } from "../ECS/Components";
 import { Types } from "../Types";
 import Entity from "../ECS/Entity";
-import AssetManager from "../AssetManager";
 import { Utils } from "../Utils";
+import ECSWizard from "../ECS/ECSWizard";
+import RenderWizard from "../Renderer/RenderWizard";
+import { Material, SceneComponent, Sprite, SquareGeometry } from "../ECS/Components";
 
 export default class Player extends SceneComponent 
 {
@@ -19,6 +20,12 @@ export default class Player extends SceneComponent
 
     public Prepare(device: GPUDevice): void 
     {
+        // 5. Create the Entity from the Enumerations that hold the index at which the componenent
+        // lies in the appropraite Asset Manager container when it was submitted.
+        //
+        
+        let playerEntity = new Entity("Player");
+
         // 1. Basic Player properties.
         //
         let playerPosition = glm.vec3.fromValues((Utils.Sizes.mCanvasWidth/2.0), Utils.Sizes.mCanvasHeight/2.0, 0.0);
@@ -30,13 +37,18 @@ export default class Player extends SceneComponent
         let playerModelMatrix = glm.mat4.create();
         let floatArray = new Float32Array(16);
         floatArray.set(playerModelMatrix, 0); 
-
+        
         const cSpriteConfig : Types.SpriteConfig = 
         {
-            Label: "Player_Sprite_Component",
+            Label: "Player_Sprite",
+            EntityUUID: playerEntity.mUUID,
             Position: playerPosition,
             Size: playerSize,
-            Cells: [],
+            Collider: 
+            {
+                Position: {x: playerPosition[0], y: playerPosition[1]},
+                Size: {x : playerSize[0], y: playerSize[1]},
+            },
             Physics: 
             {
                 Mass: playerMass,
@@ -45,36 +57,26 @@ export default class Player extends SceneComponent
             },
             Transforms: 
             {
-                ModelMatrix: playerModelMatrix,
+                Model: playerModelMatrix,
                 FloatArray: floatArray
             }
         };
 
         // 2. Components.
         //
-        let playerSimpleSquare = new SquareGeometryComponent("Player_Geometry_Component", device);
-        let playerMat = new MaterialComponent("Player_Material_Component", Types.ShaderAssets.BasicShader, playerColor);
-        let playerSprite = new SpriteComponent(cSpriteConfig);
+        let playerSimpleSquare = new SquareGeometry("Player_Geometry", device);
+        let playerMat = new Material("Player_Material", Types.Shaders.BasicShader, playerColor);
+        let playerSprite = new Sprite(cSpriteConfig);
 
         // 3. Submit them to the Asset Manager so they're accessible to each System.
         //
-        AssetManager.SubmitComponent(playerSimpleSquare, Types.ComponentAssets.PlayerGeometryComponent);
-        AssetManager.SubmitComponent(playerMat, Types.ComponentAssets.PlayerMaterialComponent);
-        AssetManager.SubmitComponent(playerSprite, Types.ComponentAssets.PlayerSpriteComponent);
 
-        // 5. Create the Entity from the Enumerations that hold the index at which the componenent
-        // lies in the appropraite Asset Manager container when it was submitted.
-        //
-        let playerEntity = new Entity([
-            Types.ComponentAssets.CameraComponent,
-            Types.ComponentAssets.PlayerGeometryComponent, 
-            Types.ComponentAssets.PlayerMaterialComponent, 
-            Types.ComponentAssets.PlayerSpriteComponent, 
-        ], "Player");
+        playerEntity.AddComponent(playerSimpleSquare);
+
 
         // 6. Finally submit the Entity to the Asset Manager.
         //
-        AssetManager.SubmitEntity(playerEntity, Types.EntityAssets.Player);
+        ECSWizard.SubmitEntity(playerEntity, Types.Entities.Player);
     }
 
     public LoadAndGenerateAssets(device : GPUDevice) : void 
@@ -83,8 +85,11 @@ export default class Player extends SceneComponent
         // Components
         //----------------------------------------------------------------
 
-        const cPlayerEntity = AssetManager.GetEntity(Types.EntityAssets.Player) as Entity;
-        const cPlayerGeometry = cPlayerEntity.GetComponent("Player_Geometry_Component") as SquareGeometryComponent;
+        const cPlayerEntity = ECSWizard.GetEntity(Types.Entities.Player) as Entity;
+        
+        const cPlayerGeometry = cPlayerEntity.GetComponent("Player_Geometry") as SquareGeometry;
+        console.log(cPlayerGeometry);
+        
 
         //----------------------------------------------------------------
         // Vertex Buffers.
@@ -97,18 +102,18 @@ export default class Player extends SceneComponent
         //----------------------------------------------------------------
 
         const cBasicShaderModule : GPUShaderModule = device.createShaderModule({
-            label: "Simple Square Shader",
+            label: "Simple_Square_Shader",
             code: simpleSquareShaderSrc
         });
 
-        AssetManager.SubmitShader(cBasicShaderModule, Types.ShaderAssets.BasicShader);
+        RenderWizard.SubmitShader(cBasicShaderModule, Types.Shaders.BasicShader);
 
         //----------------------------------------------------------------
         // Uniform Buffer Objects.
         //----------------------------------------------------------------
 
         const cCameraUBO = device.createBuffer({
-            label: "Camera UBO",
+            label: "Camera_UBO",
             size: 144, // 2 4x4 matrices and 1 vec3 + 4 bytes of padding for a struct.
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
@@ -127,10 +132,10 @@ export default class Player extends SceneComponent
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
         
-        AssetManager.SubmitUBO(cCameraUBO, Types.UBOAssets.CameraUBO);
+        RenderWizard.SubmitUBO(cCameraUBO, Types.UBOs.CameraUBO);
 
-        AssetManager.SubmitUBO(cPlayerMaterialUBO, Types.UBOAssets.PlayerMaterialUBO);
-        AssetManager.SubmitUBO(cPlayerTransformUBO, Types.UBOAssets.PlayerTransformUBO);
+        RenderWizard.SubmitUBO(cPlayerMaterialUBO, Types.UBOs.PlayerMaterialUBO);
+        RenderWizard.SubmitUBO(cPlayerTransformUBO, Types.UBOs.PlayerTransformUBO);
 
         //----------------------------------------------------------------
         // Bind Group Layouts
@@ -215,10 +220,10 @@ export default class Player extends SceneComponent
             ]
         });
 
-        AssetManager.SubmitBindGroup(cCameraBindGroup, Types.BindGroupAssets.CameraGroup);
+        RenderWizard.SubmitBindGroup(cCameraBindGroup, Types.BindGroups.CameraGroup);
 
-        AssetManager.SubmitBindGroup(cPlayerMaterialBindGroup, Types.BindGroupAssets.PlayerMaterialBindGroup);
-        AssetManager.SubmitBindGroup(cPlayerTransformBindGroup, Types.BindGroupAssets.PlayerTransformBindGroup);
+        RenderWizard.SubmitBindGroup(cPlayerMaterialBindGroup, Types.BindGroups.PlayerMaterialBindGroup);
+        RenderWizard.SubmitBindGroup(cPlayerTransformBindGroup, Types.BindGroups.PlayerTransformBindGroup);
 
         //----------------------------------------------------------------
         // Render Pipelines
@@ -272,6 +277,6 @@ export default class Player extends SceneComponent
             }
         });
 
-        AssetManager.SubmitPipeline(cSimpleSquarePipeline, Types.PipelineAssets.SimpleSquareRenderPipeline);
+        RenderWizard.SubmitPipeline(cSimpleSquarePipeline, Types.Pipelines.SimpleSquareRenderPipeline);
     }
 }

@@ -1,9 +1,9 @@
 import * as glm from "gl-matrix";
-import AssetManager from "../AssetManager";
-import { SpriteComponent } from "./Components";
 import Entity from "./Entity";
 import { SupportSystem } from "./Systems";
 import Input from "../Core/Input";
+import ECSWizard from "./ECSWizard";
+import { Sprite } from "./Components";
 
 export default class PhysicsSystem extends SupportSystem
 {
@@ -15,19 +15,19 @@ export default class PhysicsSystem extends SupportSystem
 
     public CollectEntites(): void 
     {
-        for(const e of AssetManager.GetAllEntities()) 
+        for(const e of ECSWizard.GetAllEntities()) 
         {
-            const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`);
-            if(cSprite && cSprite instanceof SpriteComponent) this.mEntities.push(e);
+            const cSprite = e.GetComponent(`${e.mLabel + `_Sprite`}`);
+            if(cSprite && cSprite instanceof Sprite) this.mEntities.push(e);
             else continue;
-        }
+        }        
     }
 
     public Run(): void 
     {
         for(const e of this.mEntities) 
         {
-            const cSprite = (e.GetComponent(`${e.mLabel + `_Sprite_Component`}`)) as SpriteComponent | undefined;
+            const cSprite = (e.GetComponent(`${e.mLabel + `_Sprite`}`)) as Sprite | undefined;
             if (!cSprite) {console.warn("Entity submitted to Physics System has no Sprite Component!"); continue;}
             if(!cSprite.mPhysics) continue;
 
@@ -60,32 +60,32 @@ export default class PhysicsSystem extends SupportSystem
         }
     }
 
-    private MovePlayer(playerSprite : SpriteComponent): void 
+    private MovePlayer(playerSprite : Sprite): void 
     {
 
         Input.CallSingleKeyPress(" ", () => {
             this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, -10.0, 0.0));
         });
-        if(Input.IsKeyPressed("w")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, -10.0, 0.0));   
-        if(Input.IsKeyPressed("a")) this.AppplyForce(playerSprite, glm.vec3.fromValues(-10.0, 0.0, 0.0));   
-        if(Input.IsKeyPressed("s")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, 10.0, 0.0));   
-        if(Input.IsKeyPressed("d")) this.AppplyForce(playerSprite, glm.vec3.fromValues(10.0, 0.0, 0.0));
+        if(Input.IsKeyPressed("w")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, -2.0, 0.0));   
+        if(Input.IsKeyPressed("a")) this.AppplyForce(playerSprite, glm.vec3.fromValues(-2.0, 0.0, 0.0));   
+        if(Input.IsKeyPressed("s")) this.AppplyForce(playerSprite, glm.vec3.fromValues(0.0, 2.0, 0.0));   
+        if(Input.IsKeyPressed("d")) this.AppplyForce(playerSprite, glm.vec3.fromValues(2.0, 0.0, 0.0));
     }
 
     private SetInitialTransforms(e : Entity) : void 
     {
-        const cSprite = e.GetComponent(`${e.mLabel + `_Sprite_Component`}`) as SpriteComponent;
+        const cSprite = e.GetComponent(`${e.mLabel + `_Sprite`}`) as Sprite;
         
         glm.mat4.translate(cSprite.mModelMatrix, cSprite.mModelMatrix, cSprite.mPosition);
         glm.mat4.scale(cSprite.mModelMatrix, cSprite.mModelMatrix, cSprite.mSize);
     }
 
-    private SetTransformFloatArray(sprite : SpriteComponent) : void 
+    private SetTransformFloatArray(sprite : Sprite) : void 
     {
         sprite.mFloatArray = new Float32Array(sprite.mModelMatrix);
     }
 
-    private AppplyForce(sprite : SpriteComponent, force : glm.vec3) : void
+    private AppplyForce(sprite : Sprite, force : glm.vec3) : void
     {
         if(!sprite.mPhysics) {console.warn("Trying to apply a force to an object with no Physics Properties!"); return;}
         // f = ma  | Newton's 2nd law of motion.

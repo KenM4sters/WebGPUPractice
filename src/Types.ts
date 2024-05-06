@@ -1,5 +1,6 @@
 import * as glm from "gl-matrix";
 import { BufferLayout } from "./Core/Buffer";
+import { Camera, InstancedSprite, Material, Sprite, SquareGeometry } from "./ECS/Components";
 
 export namespace Types 
 {            
@@ -12,57 +13,76 @@ export namespace Types
         val : T;
     }; 
 
-    export interface GridCell 
+    export interface Cell 
     {
         Position : { x : number, y : number};
         Size : { x : number, y : number};
     };
 
-    export interface PhysicsConfig 
+    export interface ComponentConfig 
     {
-        Velocity : glm.vec3;
-        Acceleration : glm.vec3;
-        Mass : number;
+        EntityUUID : number;
+    }
+
+    export interface ICollisionBody extends Cell
+    {
+        ParentEntity ?: Types.Entities;
+        InstanceIndex ?: number;
     };
 
-    export interface InstancedPhysicsConfig 
+    export interface CameraConfig extends ComponentConfig
     {
-        Velocity : glm.vec3[];
-        Acceleration : glm.vec3[];
-        Mass : number[];
+        Label : string;
+        Projection : glm.mat4;
+        View : glm.mat4;
+        Position : glm.vec3
     };
 
-    export interface TransformConfig 
+    export interface MaterialConfig extends ComponentConfig 
     {
-        ModelMatrix : glm.mat4;
-        FloatArray : Float32Array;
+        Label : string;
+        ShaderIndex : Types.Shaders;
+        Albedo : glm.vec3 | Types.TextureAssets;
     };
 
-
-    export interface InstancedTransformConfig 
+    export interface SquareGeometryConfig extends ComponentConfig 
     {
-        ModelMatrices : glm.mat4[];
+        Label : string;
+        Device : GPUDevice;
+        InstanceCount : number;
+    }
+
+    export interface PhysicsConfig<T extends glm.vec3 | glm.vec3[], M extends number | number[]> 
+    {
+        Velocity : T;
+        Acceleration : T;
+        Mass : M;
+    };
+
+    export interface TransformConfig<T extends glm.mat4 | glm.mat4[]> 
+    {
+        Model : T;
         FloatArray : Float32Array;
     };
     
-    export interface SpriteConfig 
+    export interface SpriteConfig extends ComponentConfig
     {
         Label : string;
         Position : glm.vec3;
-        Size : glm.vec3;
-        Cells : number[]; 
-        Transforms : TransformConfig;
-        Physics : PhysicsConfig | undefined;
+        Size: glm.vec3;
+        Collider : ICollisionBody;
+        Transforms : TransformConfig<glm.mat4>;
+        Physics ?: PhysicsConfig<glm.vec3, number>;
     };
 
-    export interface InstancedSpriteConfig 
+    export interface InstancedSpriteConfig extends ComponentConfig
     {
         Label : string;
         Position : glm.vec3[];
-        Size : glm.vec3[];
-        Cells : number[]; 
-        Transforms : InstancedTransformConfig;
-        Physics : InstancedPhysicsConfig | undefined;
+        Size: glm.vec3[];
+        Collider : ICollisionBody[];
+        Transforms : TransformConfig<glm.mat4[]>;
+        Physics ?: PhysicsConfig<glm.vec3[], number[]>;
     };
 
     //----------------------------------------------------------------
@@ -100,39 +120,22 @@ export namespace Types
     //----------------------------------------------------------------
     // Asset Types.
     //----------------------------------------------------------------
-    
 
-    export enum EntityAssets
-    {
-        Player = 0,
-        Level = 1,
-    };
-
-    export enum ComponentAssets
-    {
-        CameraComponent = 0,
-
-        PlayerMaterialComponent = 1,
-        PlayerGeometryComponent = 2,
-        PlayerSpriteComponent = 3,
-
-        LevelMaterialComponent = 4,
-        LevelGeometryComponent = 5,
-        LevelSpriteComponenet = 6,
-    };
-
-    export enum BindGroupAssets 
+    export enum BindGroups 
     {
         CameraGroup = 0,
 
         PlayerMaterialBindGroup = 1,
         PlayerTransformBindGroup = 2,
 
-        LevelMaterialBindGroup = 3,
-        LevelInstanceTransformBindGroup = 4,
+        EnemyMaterialBindGroup = 3,
+        EnemyInstanceTransformBindGroup = 4,
+        
+        BackgroundMaterialBindGroup = 5,
+        BackgroundTransformBindGroup = 6,
     };
 
-    export enum BindGroupLayoutAssets 
+    export enum BindGroupLayouts 
     {
         CameraGroupLayout = 0,
 
@@ -140,21 +143,24 @@ export namespace Types
         BasicTransformBindGroupLayout = 2,
     };
 
-    export enum ShaderAssets 
+    export enum Shaders 
     {
         BasicShader = 0,
-        LevelShader = 1,
+        EnemyShader = 1,
     };
 
-    export enum UBOAssets 
+    export enum UBOs
     {
         CameraUBO = 0,
 
         PlayerMaterialUBO = 1,
         PlayerTransformUBO = 2,
 
-        LevelMaterialUBO = 3,
-        LevelInstanceTransformUBO = 4,
+        EnemyMaterialUBO = 3,
+        EnemyInstanceTransformUBO = 4,
+
+        BackgroundMaterialUBO = 5,
+        BackgroundTransformUBO = 6,
     };
 
     export enum TextureAssets 
@@ -164,10 +170,25 @@ export namespace Types
         MarbleTexture = 2
     };
 
-    export enum PipelineAssets 
+    export enum Pipelines 
     {
         SimpleSquareRenderPipeline = 0,
-        LevelRenderPipeline = 1,
+        EnemyRenderPipeline = 1,
     };
+
+
+    export type Components = 
+    Material 
+    | Camera 
+    | SquareGeometry 
+    | Sprite 
+    | InstancedSprite;
+
+
+    export type ComponentName = 
+    "Camera"
+    | "Materials"
+    | "Geometries"
+    | "Sprites"
 
 };

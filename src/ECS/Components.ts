@@ -5,18 +5,18 @@ import { Primitives } from "../Core/Primitives";
 
 export abstract class Component 
 {
-    constructor(public readonly mLabel : string) {}
+    constructor(public readonly mLabel : string, public readonly entityUUID : number) {}
 };
 
-export class CameraComponent extends Component
+export class Camera extends Component
 {
-    constructor(label : string, projMat : glm.mat4, viewMat : glm.mat4, pos : glm.vec3) 
+    constructor(c : Types.CameraConfig) 
     {
-        super(label);
+        super(c.Label, c.EntityUUID);
 
-        this.mProjectionMatrix = projMat;
-        this.mViewMatrix = viewMat;
-        this.mPosition = pos;
+        this.mProjectionMatrix = c.Projection;
+        this.mViewMatrix = c.View;
+        this.mPosition = c.Position;
     }
 
     public readonly mProjectionMatrix : glm.mat4 = glm.mat4.create();
@@ -25,29 +25,28 @@ export class CameraComponent extends Component
 };
 
 
-export class MaterialComponent extends Component 
+export class Material extends Component 
 {
-    constructor(label : string, shaderIndex : Types.ShaderAssets, albedo : glm.vec3 | GPUTexture = glm.vec3.fromValues(1.0, 0.0, 0.0)) 
+    constructor(c : Types.MaterialConfig) 
     {
-        super(label);
+        super(c.Label, c.EntityUUID);
 
-        this.mShaderAssetIndex = shaderIndex;
-        this.mAlbedo = albedo;  
+        this.mShaderAssetIndex = c.ShaderIndex;
+        this.mAlbedo = c.Albedo;  
     }
 
-    public mAlbedo : glm.vec3 | GPUTexture;
-    public mShaderAssetIndex : Types.ShaderAssets;
+    public mAlbedo : glm.vec3 | Types.TextureAssets;
+    public mShaderAssetIndex : Types.Shaders;
+};
 
-}
 
-
-export class SquareGeometryComponent extends Component 
+export class SquareGeometry extends Component 
 {
-    constructor(label : string, device : GPUDevice, instanceCount : number = 1) 
+    constructor(c : Types.SquareGeometryConfig) 
     {
-        super(label);
+        super(c.Label, c.EntityUUID);
 
-        this.mInstanceCount = instanceCount;
+        this.mInstanceCount = c.InstanceCount;
 
         const vertices : Float32Array = Primitives.SQUARE_VERTICES;
         const bufferLayout = new BufferLayout([
@@ -59,7 +58,7 @@ export class SquareGeometryComponent extends Component
             Vertices: vertices,
             BufferLayout: bufferLayout
         };
-        this.mGPUBuffer = device.createBuffer({
+        this.mGPUBuffer = c.Device.createBuffer({
             label: `${this.mLabel + `_Buffer`}`,
             size: this.mData.Vertices.byteLength,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
@@ -69,47 +68,45 @@ export class SquareGeometryComponent extends Component
     public readonly mData : Types.IPrimitivePayload;
     public readonly mGPUBuffer : GPUBuffer;
     public readonly mInstanceCount : number;
-}
+};
 
-export class SpriteComponent extends Component 
+export class Sprite extends Component 
 {
     constructor(c : Types.SpriteConfig) 
     {
-        super(c.Label);
+        super(c.Label, c.EntityUUID);
 
         this.mPosition = c.Position;
         this.mSize = c.Size;
+        this.mCollider = c.Collider;
         this.mPhysics = c.Physics;
-        this.mModelMatrix = c.Transforms.ModelMatrix;
-        this.mCells = c.Cells;
+        this.mModelMatrix = c.Transforms.Model;
         this.mFloatArray = c.Transforms.FloatArray;
     }
 
     public mPosition : glm.vec3;
     public mSize : glm.vec3;
-    public mCells : number[]; 
-
-    public mPhysics : Types.PhysicsConfig | undefined;
-
+    public mCollider : Types.ICollisionBody;
+    public mPhysics ?: Types.PhysicsConfig<glm.vec3, number>;
     public mModelMatrix : glm.mat4;
     public mFloatArray : Float32Array;
-}
+};
 
 
-export class InstancedSpriteComponent extends Component 
+export class InstancedSprite extends Component 
 {
     constructor(c : Types.InstancedSpriteConfig) 
     {
-        super(c.Label);
+        super(c.Label, c.EntityUUID);
 
         this.mPosition = c.Position;
         this.mSize = c.Size;
-
+        this.mCollider = c.Collider;
         this.mPhysics = c.Physics;
-        
-        this.mModelMatrices = c.Transforms.ModelMatrices;
+        this.mModelMatrices = c.Transforms.Model;
         if(c.Transforms.FloatArray) this.mFloatArray = c.Transforms.FloatArray;
-        else {
+        else 
+        {
             this.mFloatArray = new Float32Array(this.mModelMatrices.length * 16);
             let offset = 0;
             for(const mat of this.mModelMatrices) 
@@ -120,17 +117,17 @@ export class InstancedSpriteComponent extends Component
         }
     }
 
-    public mPosition : glm.vec3[] = [];
-    public mSize : glm.vec3[] = [];
-    public mQuadrants : number[] = []; 
-
-    public mPhysics : Types.InstancedPhysicsConfig | undefined;
-
+    public mPosition : glm.vec3[];
+    public mSize : glm.vec3[];
+    public mCollider : Types.ICollisionBody[];
+    public mPhysics ?: Types.PhysicsConfig<glm.vec3[], number[]>;
     public mModelMatrices : glm.mat4[] = [];
     public mFloatArray : Float32Array;
-}
+};
 
 
+// Scene
+//
 export abstract class SceneComponent 
 {
     constructor() 
